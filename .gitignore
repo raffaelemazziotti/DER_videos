@@ -1,0 +1,81 @@
+# ============================
+# Project-specific ignores
+# ============================
+
+# Exclude dataset resources
+res/*
+
+# PyCharm settings
+.idea/
+
+# VS Code (just in case)
+.vscode/
+
+# Local Python environment
+venv/
+.env/
+.venv/
+
+# ============================
+# Python cache + build
+# ============================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Virtual environment folders
+env/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+pytest_cache/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# ============================
+# OS-generated files
+# ============================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# ============================
+# Log files
+# ============================
+*.log
+
+# ============================
+# SVG cache (optional)
+# ============================
+*~lock.svg

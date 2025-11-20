@@ -1,0 +1,146 @@
+{
+    "2024-02-23_08-51-34-ECO_3_000_M-der": {
+        "file": "2024-02-23_08-51-34-ECO_3_000_M-der",
+        "recording_name": "2024-02-23_08-51-34-ECO_3_000_M-der",
+        "fps": 20.0,
+        "total_frames": 45369,
+        "resolution": [
+            662,
+            324
+        ],
+        "duration_sec": 2268.45,
+        "duration_min": 37.81,
+        "num_trials": 30,
+        "first_trigger_frame": 5304,
+        "last_trigger_frame": 44537,
+        "intensity_counts": {
+            "0": 6,
+            "1": 6,
+            "2": 6,
+            "3": 6,
+            "4": 6
+        },
+        "valid_trials": 13,
+        "invalid_trials": 17
+    },
+    "2024-02-23_13-34-47-ECO_3_00B_M-der": {
+        "file": "2024-02-23_13-34-47-ECO_3_00B_M-der",
+        "recording_name": "2024-02-23_13-34-47-ECO_3_00B_M-der",
+        "fps": 20.0,
+        "total_frames": 42343,
+        "resolution": [
+            662,
+            324
+        ],
+        "duration_sec": 2117.15,
+        "duration_min": 35.29,
+        "num_trials": 30,
+        "first_trigger_frame": 2496,
+        "last_trigger_frame": 41990,
+        "intensity_counts": {
+            "0": 6,
+            "1": 6,
+            "2": 6,
+            "3": 6,
+            "4": 6
+        },
+        "valid_trials": 21,
+        "invalid_trials": 9
+    },
+    "2024-03-06_11-08-25-ECO_5_R00_F-der": {
+        "file": "2024-03-06_11-08-25-ECO_5_R00_F-der",
+        "recording_name": "2024-03-06_11-08-25-ECO_5_R00_F-der",
+        "fps": 20.0,
+        "total_frames": 40887,
+        "resolution": [
+            662,
+            324
+        ],
+        "duration_sec": 2044.35,
+        "duration_min": 34.07,
+        "num_trials": 30,
+        "first_trigger_frame": 963,
+        "last_trigger_frame": 40344,
+        "intensity_counts": {
+            "0": 6,
+            "1": 6,
+            "2": 6,
+            "3": 6,
+            "4": 6
+        },
+        "valid_trials": 11,
+        "invalid_trials": 19
+    },
+    "2024-03-06_12-16-10-ECO_5_0RR_F-der": {
+        "file": "2024-03-06_12-16-10-ECO_5_0RR_F-der",
+        "recording_name": "2024-03-06_12-16-10-ECO_5_0RR_F-der",
+        "fps": 20.0,
+        "total_frames": 41744,
+        "resolution": [
+            662,
+            324
+        ],
+        "duration_sec": 2087.2,
+        "duration_min": 34.79,
+        "num_trials": 30,
+        "first_trigger_frame": 1897,
+        "last_trigger_frame": 41486,
+        "intensity_counts": {
+            "0": 6,
+            "1": 6,
+            "2": 6,
+            "3": 6,
+            "4": 6
+        },
+        "valid_trials": 18,
+        "invalid_trials": 12
+    },
+    "2024-03-06_14-27-35-ECO_4_RRR_F-der": {
+        "file": "2024-03-06_14-27-35-ECO_4_RRR_F-der",
+        "recording_name": "2024-03-06_14-27-35-ECO_4_RRR_F-der",
+        "fps": 20.0,
+        "total_frames": 40950,
+        "resolution": [
+            662,
+            324
+        ],
+        "duration_sec": 2047.5,
+        "duration_min": 34.12,
+        "num_trials": 30,
+        "first_trigger_frame": 2177,
+        "last_trigger_frame": 40603,
+        "intensity_counts": {
+            "0": 6,
+            "1": 6,
+            "2": 6,
+            "3": 6,
+            "4": 6
+        },
+        "valid_trials": 16,
+        "invalid_trials": 14
+    },
+    "2024-03-06_15-46-09-ECO_4_RR0_F-der": {
+        "file": "2024-03-06_15-46-09-ECO_4_RR0_F-der",
+        "recording_name": "2024-03-06_15-46-09-ECO_4_RR0_F-der",
+        "fps": 20.0,
+        "total_frames": 40959,
+        "resolution": [
+            662,
+            324
+        ],
+        "duration_sec": 2047.95,
+        "duration_min": 34.13,
+        "num_trials": 30,
+        "first_trigger_frame": 1845,
+        "last_trigger_frame": 40710,
+        "intensity_counts": {
+            "0": 6,
+            "1": 6,
+            "2": 6,
+            "3": 6,
+            "4": 6
+        },
+        "valid_trials": 6,
+        "invalid_trials": 24
+    }
+}

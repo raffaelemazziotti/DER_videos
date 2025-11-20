@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DER Videos</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <header>
+        <h1>Direct Emotional Response (DER) Videos</h1>
+        <p>Experimental Dataset, Video Browser, Python Library.</p>
+    </header>
+
+    <section id="links-section">
+
+    <div class="badge-container">
+
+        <!-- Zenodo DOI -->
+        <a href="https://doi.org/10.5281/zenodo.17661945" target="_blank" rel="noopener">
+            <img src="https://img.shields.io/badge/Zenodo-Dataset-blue?logo=zenodo&logoColor=white"
+                 alt="Zenodo Dataset Badge">
+        </a>
+
+        <!-- GitHub -->
+        <a href="https://github.com/username/repo-placeholder" target="_blank" rel="noopener">
+            <img src="https://img.shields.io/badge/GitHub-Repository-black?logo=github"
+                 alt="GitHub Repository Badge">
+        </a>
+
+        <!-- Preprint -->
+        <a href="https://doi.org/10.1101/2024.11.20.624327" target="_blank" rel="noopener">
+            <img src="https://img.shields.io/badge/BioRxiv-Preprint-red?logo=arxiv&logoColor=white"
+                alt="BioRxiv Preprint Badge">
+        </a>
+    </div>
+</section>
+
+    <section id="trigger-combo">
+    <div class="trigger-col">
+        <h2>Description</h2>
+        <p> The videos are recordings of experimental sessions lasting more than 30 minutes,
+            during which the mouse is head-fixed and filmed from the side.
+            All subjects are spatially aligned so that the eye occupies the same position
+            across recordings. Six subjects were recorded during DER.
+            For each subject, five shock intensities were presented, with six trials per intensity,
+            for a total of 30 trials. In the videos, the triggers are encoded in the pixels of
+            the upper left corner of each frame. When the pixel value exceeds 200, the trigger is on.
+            During preprocessing, we cropped the first 10 pixels in both height and width to
+            remove the trigger.</p>
+        <img src="GIFs/trial_4_full.gif" id="example-trial" alt="Example trigger trial">
+    </div>
+
+    <div class="trigger-col">
+        <h2>Trigger Encoding</h2>
+        <p>This is the normalized plot of the upper left corner of each frame. The <span style="color:#F58A25; font-weight:bold;">X</span> represent the Trigger.</p>
+        <img src="graphs/trigger.svg" id="trigger-img" alt="Trigger plot">
+    </div>
+</section>
+
+    <section id="dataset-section">
+        <h2>Dataset Browser</h2>
+        <div id="dataset-container">Loading dataset...</div>
+    </section>
+
+    <footer>
+    <p id="contact"></p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

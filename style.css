@@ -1,0 +1,217 @@
+/* -------------------------------------------------------
+   Base layout
+------------------------------------------------------- */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background: #eeeeee;
+    color: #222;
+    line-height: 1.4;
+}
+
+/* max width constraint */
+section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px 16px;
+}
+
+/* -------------------------------------------------------
+   Header
+------------------------------------------------------- */
+header {
+    background: #222;
+    color: white;
+    padding: 20px 16px;
+    text-align: center;
+}
+
+header h1 {
+    margin-bottom: 6px;
+}
+
+
+/* -------------------------------------------------------
+   Links section
+------------------------------------------------------- */
+#links-section {
+    padding-top: 10px;
+}
+
+.badge-container {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.badge-container img {
+    height: 28px;
+    transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.badge-container img:hover {
+    transform: scale(1.05);
+    filter: brightness(1.1);
+}
+
+/* -------------------------------------------------------
+   Trigger + Example description
+------------------------------------------------------- */
+#trigger-combo p {
+    text-align: justify;
+    font-size: 0.95rem;
+}
+
+/* Example/trigger images */
+#trigger-img,
+#example-trial {
+    max-width: 300px;
+    border: 1px solid #ccc;
+    display: block;
+    margin: 10px auto 20px auto;
+}
+
+/* Two-column layout */
+#trigger-combo {
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+}
+
+.trigger-col {
+    flex: 1;
+    min-width: 280px;
+}
+
+/* -------------------------------------------------------
+   Dataset browser
+------------------------------------------------------- */
+#dataset-container {
+    margin-top: 10px;
+    background: white;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+#recording-select {
+    margin-left: 8px;
+    padding: 5px 8px;
+    min-width: 180px;
+}
+
+/* Metadata table */
+#recording-details table {
+    border-collapse: collapse;
+    margin-bottom: 15px;
+}
+
+#recording-details td {
+    padding: 4px 8px;
+    font-size: 0.9rem;
+}
+
+#recording-details td:first-child {
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+/* -------------------------------------------------------
+   Preview area (GIF + SVG)
+------------------------------------------------------- */
+.preview-row {
+    display: flex;
+    gap: 20px;
+}
+
+.preview-item1,
+.preview-item2 {
+    flex: 1;
+    min-width: 260px;
+}
+
+/* Titles */
+.preview-item1 h3,
+.preview-item2 h3 {
+    margin: 0 0 8px 0;
+}
+
+/* Responsive aspect-ratio box */
+.preview-box {
+    width: 100%;
+    aspect-ratio: 4 / 3;     /* same height ratio for both items */
+    border: 1px solid #ccc;
+    background: #fff;
+    padding: 6px;
+    box-sizing: border-box;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.preview-box img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+/* SVG override not needed anymore. */
+
+/* -------------------------------------------------------
+   Footer
+------------------------------------------------------- */
+footer {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-size: 0.75rem;
+}
+
+/* -------------------------------------------------------
+   Responsive: Tablet
+------------------------------------------------------- */
+@media (max-width: 900px) {
+
+    .preview-row {
+        flex-wrap: wrap;
+        flex-direction: column;
+    }
+
+    /* Remove fixed aspect-ratio on mobile */
+    .preview-box {
+        aspect-ratio: auto;
+        height: auto;
+    }
+
+    .preview-box img {
+        width: 100%;
+        height: auto;
+        max-height: none;
+    }
+
+    #recording-select {
+        width: 100%;
+        margin: 10px 0 0 0;
+    }
+}
+
+/* -------------------------------------------------------
+   Responsive: Phone
+------------------------------------------------------- */
+@media (max-width: 480px) {
+
+    header h1 {
+        font-size: 1.4rem;
+    }
+
+    h2 {
+        font-size: 1.1rem;
+    }
+
+    .badge-container img {
+        height: 24px;
+    }
+}
