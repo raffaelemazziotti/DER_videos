@@ -3,16 +3,9 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import find_peaks
-from pathlib import Path
 import pandas as pd
-import h5py
 import numpy as np
-import datetime
-import os
-import glob
-from psychopy import core
 from pathlib import Path
-import toml
 import os
 
 
@@ -119,9 +112,39 @@ class VideoManagerArray:
 
     def __new_sequence(self):
         """
-            Generates a new sequence of trials based on current settings for trial and subject shuffling.
-            The animals and trials are always the same, the sequence is shuffled.
-            The trial is formed by: (subject,instensity,trial_num,phase_scrambled,flipped)
+            Generates the trial sequence used by the experiment.
+
+            This method constructs the ordered list of trials that will be
+            served by `next_trial()` during stimulus presentation.
+
+            IMPORTANT
+            ---------
+            This experiment does **not** use all subjects or all trials available
+            in the dataset.
+            Instead, it uses a fixed subset of subjects, intensities,
+            and trial indices that were selected for the experimental protocol.
+            These combinations appear explicitly in the list below.
+
+            Each trial in the sequence is represented as a 5-tuple:
+
+                (subject_index, intensity, trial_number, is_phase_scrambled, is_flipped)
+
+            Trial types included:
+                • upright videos
+                • vertically flipped videos
+                • phase-scrambled versions of the same videos
+
+            The first trial is always forced to be:
+                (0, 0, 0, False, False)
+            This ensures a consistent starting condition before any randomization.
+
+            If `self.shuffle_trials` is True:
+                The trial list (excluding the first forced trial) is shuffled.
+
+            After construction:
+                -self.sequence contains the full ordered list
+                -self.sequence_n stores the number of trials
+                -self.sequence_current resets to -1 (so first next_trial() returns index 0)
         """
 
         first_trial = [(0, 0, 0, False,
@@ -152,11 +175,53 @@ class VideoManagerArray:
         self.sequence_current = -1
 
     def get_trial_movie(self, trial):
-        '''
-            Method for retrireving a specifiend trial:
-            Parameters: Trial (tuple) (sub,trial_num, intensity, if_phase_scrambled,if_flipped)
-            Intensity for now is not used.
-        '''
+        """
+            Retrieves a full stimulus movie segment for a given trial specification.
+
+            Parameters
+            ----------
+            trial : tuple
+                A 5-element tuple describing the trial to extract, with the format:
+                    (subject_index, intensity, trial_number, phase_scrambled_flag, flipped_flag)
+
+                Components:
+                    subject_index (int)
+                        Index of the subject/video in the VideoManagerArray.
+                    intensity (int)
+                        Shock intensity code. Currently not used for movie extraction.
+                    trial_number (int)
+                        Index of the trial within the selected subject’s recording.
+                    phase_scrambled_flag (bool)
+                        If True, the trial is extracted from the phase-scrambled videos (self.vms_ps).
+                        If False, the upright/original video is used (self.vms).
+                    flipped_flag (bool)
+                        If True, the extracted frames are vertically flipped.
+
+            Returns
+            -------
+            trl : np.ndarray
+                A 4-D matrix of shape (frames, height, width, channels)
+                containing the extracted movie segment for the requested trial.
+                The first 10×10 pixels are removed to exclude the trigger-encoding region.
+            trg : np.ndarray
+                A 1-D binary array (frames,) indicating whether each frame contains
+                a stimulus trigger (1) or not (0).
+
+            Notes
+            -----
+            • The function automatically computes pre- and post-windows (in frames)
+              using the subject-specific FPS, based on the global pre_sec and post_sec
+              parameters defined in the VideoManagerArray.
+
+            • The trigger pixels at the top-left corner are cropped out:
+                  trl = trl[:, 10:, 10:, :]
+
+            • Flipping is applied **after** cropping and applies to the spatial axis:
+                  trl = trl[:, ::-1, :, :]
+
+            • Intensity (trial[1]) is stored in the trial structure for completeness,
+              but does not influence which frames are extracted.
+        """
 
         subject = trial[0]
         instensity = trial[1]

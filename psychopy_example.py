@@ -19,7 +19,7 @@ from video_lib import VideoManagerArray   # adjust path if needed
 # USER PARAMETERS
 # -------------------------------------------
 folder = "res"
-pre_sec = 20 # seconds before the trigger
+pre_sec = 3 # seconds before the trigger
 post_sec = 6 # seconds after the trigger
 
 bg_lum = 0
@@ -129,22 +129,42 @@ while True:
 print("Starting trials. Press SPACE to start each trial. ESC to quit.")
 
 
-# Loop while trials remain
+# Loop
 while vms.has_next_trial():
 
     # Fetch next trial tuple
     trl = vms.next_trial()
     print("Next trial:", trl)
-
+    text_stim.text = "H"
     # Wait for SPACE to show next trial stimulus
     print("Press SPACE to start this trial.")
     while True:
+
+        if frame_clock.getTime() >= frame_interval:
+            frame_clock.reset()
+
+            # remove 10×10 trigger pixel block
+            frame = movie_hab[h, 10:, 10:, :]
+
+            # grayscale + L norm
+            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY).astype('float32') / 255.0
+            frame = frame - np.mean(frame)
+
+            image_stim.image = frame
+            text_stim.text = "H"
+            text_stim.draw()
+            image_stim.draw()
+            win.flip()
+
+            h = (h + 1) % movie_hab.shape[0]
+
         keys = event.getKeys()
         if 'escape' in keys:
             core.quit()
         if 'space' in keys:
             break
 
+    print("Trial Started")
     # Load trial movie & triggers
     movie, trg = vms.get_trial_movie(trl)
 
@@ -172,7 +192,7 @@ while vms.has_next_trial():
             win.flip()
 
             if trg[i] == 1:
-                print("Trigger @ frame", i)
+                print(f"Trigger {i} frame")
 
             if i < movie.shape[0] - 1:
                 i += 1
