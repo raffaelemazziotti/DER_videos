@@ -37,49 +37,10 @@ Each video encodes the stimulation trigger in the top-left pixel of every frame.
 These values form the binary trigger vector used to detect trial onset timing.  
 A global trigger visualization plot is available:
 
-```
-graphs/trigger.svg
-```
-
 During preprocessing, the first 10×10 pixels were removed from the analysis region to eliminate the trigger encoding.
 
-## Provided Files
 
-### 1. GIF Previews (`GIFs/`)
-
-For each subject:
-
-```
-GIFs/<recording_name>.gif
-```
-
-A compact visualization summarizing all trials.
-
-Additional example with trigger pixel visible:
-
-```
-GIFs/trial_4_full.gif
-```
-
-### 2. Movement Matrices (`graphs/`)
-
-For each subject:
-
-```
-graphs/<recording_name>_movement_matrix.svg
-```
-
-These SVG plots show frame-by-frame movement estimation across all trials, aligned to detected triggers.
-
-### 3. Trigger Overview
-
-```
-graphs/trigger.svg
-```
-
-Plot of the upper-left pixel intensity across frames, with triggers marked by X.
-
-### 4. Metadata (`video_info.json`)
+## Metadata (`video_info.json`)
 
 For each recording, the following information is stored:
 
@@ -89,6 +50,12 @@ For each recording, the following information is stored:
 - duration_sec
 - duration_min
 - num_trials
+- first_trigger_frame
+- last_trigger_frame
+- intensity_counts (dict)
+- valid_trials
+- invalid_trials
+
 
 Example:
 
@@ -99,63 +66,75 @@ Example:
     "total_frames": 112000,
     "resolution": [1280, 1024],
     "duration_min": 31.1,
-    "num_trials": 30
+    "num_trials": 30,
+    "first_trigger_frame": 5304,
+    "last_trigger_frame": 44537,
+    "intensity_counts": {
+            "0": 6,
+            "1": 6,
+            "2": 6,
+            "3": 6,
+            "4": 6
+        },
+    "valid_trials": 13,
+    "invalid_trials": 17
   }
 }
 ```
 
-## Folder Structure
+## Dataset Structure
 
 ```
-├── index.html               
-├── style.css                
-├── script.js                
-├── video_info.json          
+res/
 │
-├── GIFs/
-│     ├── <recording>.gif
-│     ├── trial_4_full.gif
+├── upright/
+│     ├── subject1_video.avi
+│     ├── subject2_video.avi
+│     └── ...
 │
-├── graphs/
-│     ├── <recording>_movement_matrix.svg
-│     ├── trigger.svg
-│
-└── README.md                
+└── scrambled/
+      ├── subject1_video_scrambled.avi
+      ├── subject2_video_scrambled.avi
+      └── ...               
 ```
 
-## How to Use the Dataset
-
-### Interactive Browser
-
-A GitHub Pages site allows users to browse:
-
-- Recording previews
-- Movement matrices
-- Metadata
-- Trigger visualization
-
-### Programmatic Access
-
-```python
-import json
-
-with open("video_info.json", "r") as f:
-    info = json.load(f)
-
-print(info.keys())
+## How to Use the Dataset in Python
+The VideoManagerArray class provides a unified interface to load, and visualize and use behavioral video 
+trials from multiple subjects. It automatically loads videos from upright/ and scrambled/ subfolders 
+inside a chosen dataset folder.
+``` python
+from video_lib import VideoManagerArray
+vmh = VideoManagerArray() # if the folder is in the same directory
+```
+or
+``` python
+from video_lib import VideoManagerArray
+vmh = VideoManagerArray(folder="/path/to/my_dataset") # to specify the dir
 ```
 
-## Data Availability
+In the class a trial is defined as a tuple:
+``` python
+trl = (sub,trial_num, intensity, if_phase_scrambled,if_flipped)
+``` 
+The trial (0,4,4, False, False) means subject at index 0, trial number 4, intensity level 4 (500uA), not phase scrambled, not inverted
+The trial (1,3,3, True, False) means subject at index 1, trial number 3, intensity level 3 (300uA), phase scrambled applied, not inverted
+The trial (3,5,0, False, True) means subject at index 0, trial number 5, intensity level 3 (0uA), not phase scrambled,  vertically inverted
+``` python
+movie = vmh.get_trial_movie((3,5,0, False, True))
 
-Zenodo (full dataset): DOI placeholder  
-GitHub (browser + tools): Repository placeholder
+``` 
+
+
+## OS Compatibility
+Tested only on Windows 10
 
 ## Citation
 
-Mazziotti, R. M., Direct Emotional Response Behavioral Dataset, Zenodo (2024).  
-DOI: placeholder
+### Zenodo 
+Caldarelli, M., Papini, E. M., Pizzorusso, T., & Mazziotti, R. (2025). Direct Emotional Response Videos for Vicarious Emotional Processing in Mice [Data set]. Zenodo. https://doi.org/10.5281/zenodo.17661945
 
-Preprint (BioRxiv): DOI placeholder
+### Preprint (BioRxiv): 
+[https://doi.org/10.1101/2024.11.20.624327 ](https://doi.org/10.1101/2024.11.20.624327)
 
 ## Contact
 

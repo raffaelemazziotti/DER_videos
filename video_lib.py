@@ -64,45 +64,57 @@ class TrgManager:
 
 
 class VideoManagerArray:
-    # this version handle upright, inverted and scrambled
-    def __init__(self, pre_sec=20, post_sec=20, shuffle_trials=True):
+
+    def __init__(self, folder="res", pre_sec=20, post_sec=20, shuffle_trials=True):
         """
         Initializes a VideoManagerArray instance to manage and access video trial data.
 
         Parameters:
-            pre_sec (int): Number of seconds to preload before each trial starts. Default is 20.
-            post_sec (int): Number of seconds to continue loading after each trial ends. Default is 20.
-            shuffle_trials (bool): If True, shuffles the order of trials across all videos. Default is True.
+            folder (str): Path to the dataset root containing 'upright' and 'scrambled' subfolders.
+                          Default is 'res', in the current folder.
+            pre_sec (int): Seconds to include before each trial starts. Default 20.
+            post_sec (int): Seconds to include after each trial ends. Default 20.
+            shuffle_trials (bool): Shuffle the order of trials across all videos. Default True.
         """
 
-        self.upright = VideoManager.list_videos(pth='res/upright', verbosity=0)
+        # --- Construct paths dynamically ---
+        upright_path = f"{folder}/upright"
+        scrambled_path = f"{folder}/scrambled"
 
-        self.vms = list()
+        # --- Load lists of video files ---
+        self.upright = VideoManager.list_videos(pth=upright_path, verbosity=0)
+        self.scrambled = VideoManager.list_videos(pth=scrambled_path, verbosity=0)
 
-        self.scrambled = VideoManager.list_videos(pth='res/scrambled', verbosity=0)
-        self.vms_ps = list()
+        self.vms = []
+        self.vms_ps = []
 
         print("### VideoManagerArray ### Number of videos:", len(self.upright))
-        print('### VideoManagerArray ### Loading:')
-        fps = list()
+        print("### VideoManagerArray ### Loading Upright Videos:")
+
+        fps = []
+
         for i, v in enumerate(self.upright):
-            print(f'### VideoManagerArray ### {i} - {v}')
+            print(f"### VideoManagerArray ### {i} - {v}")
             vm = VideoManager(v)
             fps.append(vm.fps)
             self.vms.append(vm)
 
-        print('### VideoManagerArray ### Loading Phase Scrambled:')
+        print("### VideoManagerArray ### Loading Phase Scrambled Videos:")
         for i, v in enumerate(self.scrambled):
-            print(f'\t### VideoManagerArray ### Phase Scrambled: {i} - {v}')
+            print(f"\t### VideoManagerArray ### Phase Scrambled: {i} - {v}")
             vm = VideoManager(v)
             fps.append(vm.fps)
             self.vms_ps.append(vm)
 
+        # Store config
+        self.folder = folder
         self.shuffle_trials = shuffle_trials
-        self.__new_sequence()
         self.pre = pre_sec
         self.post = post_sec
         self.fps = np.median(fps)
+
+        # Build the trial sequence
+        self.__new_sequence()
         self.sequence_current = -1
 
     def __new_sequence(self):
@@ -113,7 +125,7 @@ class VideoManagerArray:
         """
 
         first_trial = [(0, 0, 0, False,
-                        False)]  # the first trial of the sequence is always a 0 intensity [true/false refers to phase scrambling]
+                        False)]  # the first trial of the sequence is always 0 intensity
         self.sequence = [(0, 0, 15, False, False), (1, 0, 0, False, False), (1, 0, 5, False, False),
                          (1, 0, 10, False, False), (1, 0, 15, False, False),
                          (0, 4, 4, False, False), (0, 4, 14, False, False), (0, 4, 24, False, False),
@@ -142,7 +154,7 @@ class VideoManagerArray:
     def get_trial_movie(self, trial):
         '''
             Method for retrireving a specifiend trial:
-            Parameters: Trial (tuple) (sub,trial_num,if_phase_scrambled,if_flipped)
+            Parameters: Trial (tuple) (sub,trial_num, intensity, if_phase_scrambled,if_flipped)
             Intensity for now is not used.
         '''
 
@@ -178,6 +190,7 @@ class VideoManagerArray:
         Returns:
             VideoManager or (frames,trg) trial , depending on the type of 'item'.
         """
+
         # TODO extraction of upside down and phase scrambled?
         if type(item) is int:
             return self.vms[item]
