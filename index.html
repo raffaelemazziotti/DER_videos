@@ -58,24 +58,38 @@
     </div>
 </section>
 
-    <section>
-        <a href="docs/index.html" target="_blank"
-           style="
-              display:inline-block;
-              background:#818181;
-              color:white;
-              padding:14px 28px;   /* height = first value, width = second */
-              border-radius:6px;
-              font-weight:600;
-              text-decoration:none;
-              font-family:Arial, sans-serif;
-              font-size:16px;      /* controls text size */
-              min-width:200px;     /* optional: fixed button width */
-              text-align:center;   /* centers text if width is fixed */
-           ">
-           📘 API Documentation
-        </a>
-    </section>
+    <section id="api-docs" style="text-align:center; padding-top:30px;">
+
+    <h2>API Documentation</h2>
+    <p style="max-width:700px; margin:0 auto 20px auto; font-size:0.95rem; color:#444;">
+        The Python library included with the DER Videos dataset provides a high-level API
+        to load videos, extract trials, compute movement indices, and generate visualizations.
+        You can browse the full documentation below.
+    </p>
+
+    <a href="docs/index.html" target="_blank"
+       style="
+          display:inline-block;
+          background:#5a5a5a;
+          color:white;
+          padding:16px 32px;
+          border-radius:8px;
+          font-weight:600;
+          font-size:18px;
+          text-decoration:none;
+          font-family:Arial, sans-serif;
+          min-width:240px;
+          text-align:center;
+          box-shadow:0 2px 4px rgba(0,0,0,0.15);
+          transition:background 0.2s ease, transform 0.15s ease;
+       "
+       onmouseover="this.style.background='#6e6e6e'; this.style.transform='scale(1.03)';"
+       onmouseout="this.style.background='#5a5a5a'; this.style.transform='scale(1)';"
+    >
+        📘 Open API Documentation
+    </a>
+
+</section>
 
     <section id="dataset-section">
         <h2>Dataset Browser</h2>
