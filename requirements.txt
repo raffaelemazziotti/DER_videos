@@ -2,4 +2,4 @@ opencv-python
 matplotlib
 numpy
 pandas
-scip
+scipy

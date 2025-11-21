@@ -18,13 +18,13 @@ from video_lib import VideoManagerArray   # adjust path if needed
 # -------------------------------------------
 # USER PARAMETERS
 # -------------------------------------------
-folder = "res"
+folder = "res" # dataset dir
 pre_sec = 3 # seconds before the trigger
 post_sec = 6 # seconds after the trigger
 
-bg_lum = 0
-height_deg = 60
-img_pos = (0, 0)
+bg_lum = 0 # background luminance
+height_deg = 60 # stimulus height in degs
+img_pos = (0, 0) # position of the stimulus
 
 # -------------------------------------------
 # LOAD VIDEOS

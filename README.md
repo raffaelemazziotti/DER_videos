@@ -28,6 +28,13 @@ All metadata for each session are stored in `video_info.json`.
 - **Spatial alignment:** All videos are registered so that the mouse’s eye appears at a fixed 
 position across recordings.
 
+The stimulation consist of tail shoks at different intensities:
+- 0: 0 uA
+- 1: 50 uA
+- 2: 150 uA
+- 3: 300 uA
+- 4: 500 uA
+
 ## Trigger Encoding
 
 Stimulation timing is encoded in the **top-left pixel** of each video frame:
@@ -143,8 +150,22 @@ Example usage:
 
 ```python
 movie, trl = vmh.get_trial_movie((3, 5, 0, False, True))
-vmh.preview(movie)
+vmh.preview(movie) # show the trial using opencv
 ```
+
+### Trials Sequence
+
+When initialized, `VideoManagerArray` automatically loads the sequence of trials used in the experiment into the `sequence` attribute.  
+This sequence is randomized on creation, with the exception of the very first trial, which is always a 0 µA (baseline) stimulation.  
+The sequence generation logic is defined in the internal method `__new_sequence()`. The default sequence can be shuffled 
+using the parameter `shuffle_trials` during the initialization of  `VideoManagerArray`.  
+
+You can iterate through the trial order using the convenience methods:
+
+- `next_trial()` – returns the next trial in the sequence  
+- `has_next_trial()` – checks whether additional trials are available
+
+
 
 ## Example Script
 

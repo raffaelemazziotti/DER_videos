@@ -333,8 +333,6 @@ class VideoManagerArray:
 
 
 class VideoManager:
-    # plot movement per trial
-    # plot movement mosaic
 
     def __init__(self, video_path, pattern=[0, 1, 2, 3, 4, 0, 4, 3, 2, 1]):
         """
