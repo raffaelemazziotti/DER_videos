@@ -1,48 +1,62 @@
 # Direct Emotional Response (DER) Video Dataset
+[![Zenodo](https://zenodo.org/badge/DOI/10.5281/zenodo.17661945.svg)](https://doi.org/10.5281/zenodo.17661945)
+[![bioRxiv Preprint](https://img.shields.io/badge/bioRxiv-10.1101%2F2024.11.20.624327-red.svg)](https://doi.org/10.1101/2024.11.20.624327)
 
-A dataset of synchronized widefield behavioral recordings collected from head-fixed mice during the Direct Emotional Response (DER) paradigm.  
-The dataset includes video previews, movement matrices, trigger visualizations, and metadata for every recording.
+A curated collection of high-resolution behavioral recordings from head-fixed mice undergoing the Direct Emotional Response (DER) paradigm. Each video contains embedded stimulation timing and detailed metadata.
 
 ## Overview
 
-This dataset consists of widefield behavioral videos acquired while mice were exposed to controlled emotional stimuli. Each video contains:
+This dataset includes side-view recordings of mice exposed to controlled emotional stimulation (tail shock). Each recording provides:
 
-- A 30+ minute session per subject
-- A side-view camera capturing the mouse’s behavioral responses
-- Six shock intensities, each repeated six times
-- 30 trials per subject
-- A trigger signal encoded directly in the video pixel data
-- Preprocessed materials: GIF previews, movement matrices, trigger visualization plots, and structured metadata
+- A continuous session >30 minutes (habituation + stimulation protocol)
+- Stable side-view imaging of facial and body movements
+- Five shock intensities, each repeated six times (1-minute intertrial interval)
+- 30 total trials per subject
+- Frame-level trigger signals embedded in the video and as `.npy` files
+- Additional processed materials: GIF previews, motion matrices, trigger plots, and structured metadata
 
-All files are accompanied by a `video_info.json` metadata file containing frame count, FPS, duration, resolution, and number of detected trials.
+All metadata for each session are stored in `video_info.json`.
 
 ## Subjects and Recording Structure
 
-- Total subjects: 6
-- Trials per subject: 30
-- Trial design:
-  - 5 stimulus intensities
+- **Subjects:** 6
+- **Trials per subject:** 30
+- **Trial design:**
+  - 5 stimulation intensities
   - 6 repetitions per intensity
-- Recording duration: ~30 minutes per subject
-- Spatial alignment:
-  All videos are aligned so that the mouse’s eye appears in the same image location across recordings.
+- **Recording duration:** approximately 30 minutes per subject
+- **Spatial alignment:** All videos are registered so that the mouse’s eye appears at a fixed 
+position across recordings.
 
 ## Trigger Encoding
 
-Each video encodes the stimulation trigger in the top-left pixel of every frame.
+Stimulation timing is encoded in the **top-left pixel** of each video frame:
 
-- Pixel value > 200 → trigger ON
-- Pixel value ≤ 200 → trigger OFF
+- Pixel value > 200 → **trigger ON**
+- Pixel value ≤ 200 → **trigger OFF**
 
-These values form the binary trigger vector used to detect trial onset timing.  
-A global trigger visualization plot is available:
+A matching `.npy` file containing the trigger vector is also included for each recording.
 
-During preprocessing, the first 10×10 pixels were removed from the analysis region to eliminate the trigger encoding.
+## Folder Structure and Contents
 
+The `.zip` dataset contains two primary folders:
+
+### upright/
+Unaltered videos recorded during the DER experiment.
+
+### scrambled/
+Fourier phase-scrambled versions of the same videos.
+These preserve luminance and motion statistics but remove semantic visual content.
+
+Each folder contains:
+
+- `.avi` files: the video recordings
+- `.npy` files: extracted trigger timings
+- An `.xlsx` file: trial-level quality annotations (valid or invalid, based on movements thresholds during the prestimulus)
 
 ## Metadata (`video_info.json`)
 
-For each recording, the following information is stored:
+Metadata fields include:
 
 - fps
 - total_frames
@@ -52,10 +66,9 @@ For each recording, the following information is stored:
 - num_trials
 - first_trigger_frame
 - last_trigger_frame
-- intensity_counts (dict)
+- intensity_counts
 - valid_trials
 - invalid_trials
-
 
 Example:
 
@@ -70,72 +83,83 @@ Example:
     "first_trigger_frame": 5304,
     "last_trigger_frame": 44537,
     "intensity_counts": {
-            "0": 6,
-            "1": 6,
-            "2": 6,
-            "3": 6,
-            "4": 6
-        },
+      "0": 6,
+      "1": 6,
+      "2": 6,
+      "3": 6,
+      "4": 6
+    },
     "valid_trials": 13,
     "invalid_trials": 17
   }
 }
 ```
 
-## Dataset Structure
+## Directory Structure
 
 ```
 res/
 │
 ├── upright/
-│     ├── subject1_video.avi
-│     ├── subject2_video.avi
+│     ├── subject1.avi
+│     ├── subject1_triggers.npy
 │     └── ...
 │
 └── scrambled/
-      ├── subject1_video_scrambled.avi
-      ├── subject2_video_scrambled.avi
-      └── ...               
+      ├── subject1_scrambled.avi
+      ├── subject1_scrambled_triggers.npy
+      └── ...
 ```
 
-## How to Use the Dataset in Python
-The VideoManagerArray class provides a unified interface to load, and visualize and use behavioral video 
-trials from multiple subjects. It automatically loads videos from upright/ and scrambled/ subfolders 
-inside a chosen dataset folder.
-``` python
+## Using the Dataset in Python
+
+The `VideoManagerArray` class provides a unified interface for loading, previewing, and retrieving trials.
+It automatically detects `upright/` and `scrambled/` subfolders.
+
+```python
 from video_lib import VideoManagerArray
-vmh = VideoManagerArray() # if the folder is in the same directory
-```
-or
-``` python
-from video_lib import VideoManagerArray
-vmh = VideoManagerArray(folder="/path/to/my_dataset") # to specify the dir
+vmh = VideoManagerArray()
 ```
 
-In the class a trial is defined as a tuple:
-``` python
-trl = (sub,trial_num, intensity, if_phase_scrambled,if_flipped)
-``` 
-The trial (0,4,4, False, False) means subject at index 0, trial number 4, intensity level 4 (500uA), not phase scrambled, not inverted
-The trial (1,3,3, True, False) means subject at index 1, trial number 3, intensity level 3 (300uA), phase scrambled applied, not inverted
-The trial (3,5,0, False, True) means subject at index 0, trial number 5, intensity level 3 (0uA), not phase scrambled,  vertically inverted
-``` python
-movie = vmh.get_trial_movie((3,5,0, False, True))
+or:
 
-``` 
+```python
+vmh = VideoManagerArray(folder="/path/to/my_dataset")
+```
 
+A trial is represented as:
+
+```python
+(sub, trial_num, intensity, is_scrambled, is_flipped)
+```
+
+Examples:
+
+- `(0, 4, 4, False, False)` → subject 0, trial 4, intensity 4 (500 µA), upright video
+- `(1, 3, 3, True, False)` → subject 1, trial 3, intensity 3 (300 µA), scrambled video
+- `(3, 5, 0, False, True)` → subject 3, trial 5, baseline intensity, flipped vertically
+
+Example usage:
+
+```python
+movie, trl = vmh.get_trial_movie((3, 5, 0, False, True))
+vmh.preview(movie)
+```
+
+## Example Script
+
+`psychopy_example.py` contains a minimal working example for using the videos as stimuli for the Vicarious Emotional Response task.
+It requires Psychopy: https://www.psychopy.org/download.html
 
 ## OS Compatibility
-Tested only on Windows 10
+
+Tested on **Windows 10**.
 
 ## Citation
 
-### Zenodo 
-Caldarelli, M., Papini, E. M., Pizzorusso, T., & Mazziotti, R. (2025). Direct Emotional Response Videos for Vicarious Emotional Processing in Mice [Data set]. Zenodo. https://doi.org/10.5281/zenodo.17661945
+### Zenodo
+Caldarelli, M., Papini, E. M., Pizzorusso, T., & Mazziotti, R. (2025). *Direct Emotional Response Videos for Vicarious Emotional Processing in Mice* [Data set]. Zenodo. https://doi.org/10.5281/zenodo.17661945
 
-### Preprint (BioRxiv): 
-[https://doi.org/10.1101/2024.11.20.624327 ](https://doi.org/10.1101/2024.11.20.624327)
+### Preprint
+https://doi.org/10.1101/2024.11.20.624327
 
-## Contact
-
-raffaelemario.mazziotti [at] unifi [dot] it

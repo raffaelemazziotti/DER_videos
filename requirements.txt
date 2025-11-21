@@ -2,7 +2,4 @@ opencv-python
 matplotlib
 numpy
 pandas
-h5py
-toml
-scipy
-psychopy
+scip
