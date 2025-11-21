@@ -172,6 +172,9 @@ You can iterate through the trial order using the convenience methods:
 `psychopy_example.py` contains a minimal working example for using the videos as stimuli for the Vicarious Emotional Response task.
 It requires Psychopy: https://www.psychopy.org/download.html
 
+## API Documentation
+For more info visit the page with the [API Documentation](docs/index.html)
+
 ## OS Compatibility
 
 Tested on **Windows 10**.

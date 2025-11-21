@@ -1,7 +1,21 @@
+"""
+video_lib
+=========
+A collection of tools for loading, managing, preprocessing, and presenting the
+Direct Emotional Response (DER) behavioral videos.
+
+Includes:
+- TrgManager: Save/load trigger arrays (.npy)
+- VideoManager: Low-level per-video movie extraction utilities
+- VideoManagerArray: High-level experimental trial sequencing and access
+
+This module is intended for behavioral neuroscience experiments involving
+vicarious emotional response, upright vs. phase-scrambled stimuli, and
+per-trial movie extraction.
+"""
+
 import cv2
-import os
 import matplotlib.pyplot as plt
-import numpy as np
 from scipy.signal import find_peaks
 import pandas as pd
 import numpy as np
@@ -10,9 +24,48 @@ import os
 
 
 class TrgManager:
+    """
+        TrgManager
+        ----------
+        Handle saving and loading of trigger arrays associated with video files.
+
+        This utility class provides a simple interface for:
+        - Creating a `.npy` filename associated with a video or base name.
+        - Saving a 1-dimensional NumPy array to disk.
+        - Loading a previously saved trigger array.
+        - Checking whether the trigger file exists.
+
+        Typical usage
+        -------------
+        >>> trg = TrgManager("res/upright/video1.avi")
+        >>> if trg.file_exists():
+        ...     trigger = trg.load_array()
+        ... else:
+        ...     trg.save_array(my_trigger_vector)
+
+        Notes
+        -----
+        The class enforces that the saved and loaded arrays must be monodimensional.
+        This ensures consistency with trigger vectors extracted from videos.
+        """
     def __init__(self, filename):
         """
-        filename (str): The filename or path where the array will be saved or loaded from.
+        Construct a TrgManager and derive the `.npy` filename.
+
+        Parameters
+        ----------
+        filename : str
+            The base filename or path associated with the trigger array.
+            If the input contains an extension, it is removed and replaced
+            with `.npy`. Otherwise, `.npy` is appended.
+
+        Examples
+        --------
+        >>> TrgManager("movie.avi").filename
+        'movie.npy'
+
+        >>> TrgManager("session").filename
+        'session.npy'
         """
 
         if '.' in filename:
@@ -22,11 +75,21 @@ class TrgManager:
 
     def save_array(self, array):
         """
-        Parameters:
-        array (numpy.ndarray): The monodimensional array to be saved.
+        Save a 1-dimensional NumPy array to the trigger file.
 
-        Raises:
-        ValueError: If the array is not monodimensional.
+        Parameters
+        ----------
+        array : numpy.ndarray
+            The monodimensional array to be saved as `.npy`.
+
+        Raises
+        ------
+        ValueError
+            If the array is not monodimensional.
+
+        Notes
+        -----
+        Arrays are saved using `numpy.save`. The file is overwritten if it exists.
         """
         if array.ndim != 1:
             raise ValueError("The array is not monodimensional.")
@@ -34,12 +97,23 @@ class TrgManager:
 
     def load_array(self):
         """
+        Load a monodimensional trigger array from disk.
 
-        Returns:
-        numpy.ndarray: The loaded monodimensional array.
+        Returns
+        -------
+        numpy.ndarray
+            The loaded 1-dimensional array.
 
-        Raises:
-        ValueError: If the loaded array is not monodimensional.
+        Raises
+        ------
+        ValueError
+            If the loaded array is not monodimensional.
+        FileNotFoundError
+            If the trigger file does not exist.
+
+        Notes
+        -----
+        Files are loaded using `numpy.load`. The method enforces array shape.
         """
         array = np.load(self.filename)
         if array.ndim != 1:
@@ -48,10 +122,18 @@ class TrgManager:
 
     def file_exists(self):
         """
-        Check if the file specified during initialization exists.
+        Check whether the trigger `.npy` file exists.
 
-        Returns:
-        bool: True if the file exists, False otherwise.
+        Returns
+        -------
+        bool
+            True if the file exists, otherwise False.
+
+        Examples
+        --------
+        >>> trg = TrgManager("video.avi")
+        >>> trg.file_exists()
+        False
         """
         return os.path.exists(self.filename)
 
@@ -60,14 +142,38 @@ class VideoManagerArray:
 
     def __init__(self, folder="res", pre_sec=20, post_sec=20, shuffle_trials=True):
         """
-        Initializes a VideoManagerArray instance to manage and access video trial data.
+        VideoManagerArray
+        -----------------
+        A high-level container that loads multiple VideoManager objects from a dataset
+        organized into `upright/` and `scrambled/` folders, generates an experiment-specific
+        trial sequence, and provides utilities for retrieving full trial movies across subjects.
 
-        Parameters:
-            folder (str): Path to the dataset root containing 'upright' and 'scrambled' subfolders.
-                          Default is 'res', in the current folder.
-            pre_sec (int): Seconds to include before each trial starts. Default 20.
-            post_sec (int): Seconds to include after each trial ends. Default 20.
-            shuffle_trials (bool): Shuffle the order of trials across all videos. Default True.
+        The class automates:
+        - Loading all upright and phase-scrambled videos in a given dataset folder.
+        - Creating paired VideoManager instances (upright and scrambled).
+        - Computing pre- and post-trial window sizes in frames, based on video FPS.
+        - Building the fixed set of trial combinations used in the experiment.
+        - Randomizing the trial order (optional).
+        - Providing access to (trial → movie segment) retrieval.
+        - Iterating the predefined stimulus sequence using `next_trial()`.
+        - Looking up valid trials for each subject.
+
+        Typical usage
+        -------------
+        >>> vma = VideoManagerArray("res")
+        >>> t = vma.next_trial()
+        >>> movie, trg = vma.get_trial_movie(t)
+        >>> VideoManagerArray.preview(movie)
+
+        Dataset Structure
+        -----------------
+        folder/
+            upright/
+                <subject videos .avi>
+            scrambled/
+                <phase-scrambled videos .avi>
+
+        Each subject is represented by one upright video and one scrambled video.
         """
 
         # --- Construct paths dynamically ---
@@ -112,39 +218,30 @@ class VideoManagerArray:
 
     def __new_sequence(self):
         """
-            Generates the trial sequence used by the experiment.
+        Construct the predefined experiment trial sequence.
 
-            This method constructs the ordered list of trials that will be
-            served by `next_trial()` during stimulus presentation.
+        The experiment uses only a specific subset of subjects and trial indices.
+        These combinations are explicitly defined in the list below and include:
+            - Upright trials
+            - Flipped versions
+            - Phase-scrambled versions
 
-            IMPORTANT
-            ---------
-            This experiment does **not** use all subjects or all trials available
-            in the dataset.
-            Instead, it uses a fixed subset of subjects, intensities,
-            and trial indices that were selected for the experimental protocol.
-            These combinations appear explicitly in the list below.
+        Each entry in the sequence is a tuple:
+            (subject_index, intensity, trial_number, is_phase_scrambled, is_flipped)
 
-            Each trial in the sequence is represented as a 5-tuple:
+        Rules
+        -----
+        - The *first trial* is always (0, 0, 0, False, False) to ensure a consistent start.
+        - If `self.shuffle_trials` is True:
+              The remaining trials are randomly shuffled.
+        - After building the list:
+              `self.sequence`        contains all trials
+              `self.sequence_n`      stores the count
+              `self.sequence_current` resets to -1
 
-                (subject_index, intensity, trial_number, is_phase_scrambled, is_flipped)
-
-            Trial types included:
-                • upright videos
-                • vertically flipped videos
-                • phase-scrambled versions of the same videos
-
-            The first trial is always forced to be:
-                (0, 0, 0, False, False)
-            This ensures a consistent starting condition before any randomization.
-
-            If `self.shuffle_trials` is True:
-                The trial list (excluding the first forced trial) is shuffled.
-
-            After construction:
-                -self.sequence contains the full ordered list
-                -self.sequence_n stores the number of trials
-                -self.sequence_current resets to -1 (so first next_trial() returns index 0)
+        Returns
+        -------
+        None
         """
 
         first_trial = [(0, 0, 0, False,
@@ -176,51 +273,28 @@ class VideoManagerArray:
 
     def get_trial_movie(self, trial):
         """
-            Retrieves a full stimulus movie segment for a given trial specification.
+        Extract the full movie segment for a given trial descriptor.
 
-            Parameters
-            ----------
-            trial : tuple
-                A 5-element tuple describing the trial to extract, with the format:
-                    (subject_index, intensity, trial_number, phase_scrambled_flag, flipped_flag)
+        Parameters
+        ----------
+        trial : tuple
+            A 5-element trial description:
+                (subject_index, intensity, trial_number,
+                 is_phase_scrambled, is_flipped)
 
-                Components:
-                    subject_index (int)
-                        Index of the subject/video in the VideoManagerArray.
-                    intensity (int)
-                        Shock intensity code. Currently not used for movie extraction.
-                    trial_number (int)
-                        Index of the trial within the selected subject’s recording.
-                    phase_scrambled_flag (bool)
-                        If True, the trial is extracted from the phase-scrambled videos (self.vms_ps).
-                        If False, the upright/original video is used (self.vms).
-                    flipped_flag (bool)
-                        If True, the extracted frames are vertically flipped.
+        Returns
+        -------
+        trl : numpy.ndarray
+            A 4D array (frames × H × W × channels) containing the movie segment.
+            The trigger pixel region (10×10) is automatically cropped out.
+        trg : numpy.ndarray
+            A 1D array indicating the trigger time within the segment.
 
-            Returns
-            -------
-            trl : np.ndarray
-                A 4-D matrix of shape (frames, height, width, channels)
-                containing the extracted movie segment for the requested trial.
-                The first 10×10 pixels are removed to exclude the trigger-encoding region.
-            trg : np.ndarray
-                A 1-D binary array (frames,) indicating whether each frame contains
-                a stimulus trigger (1) or not (0).
-
-            Notes
-            -----
-            • The function automatically computes pre- and post-windows (in frames)
-              using the subject-specific FPS, based on the global pre_sec and post_sec
-              parameters defined in the VideoManagerArray.
-
-            • The trigger pixels at the top-left corner are cropped out:
-                  trl = trl[:, 10:, 10:, :]
-
-            • Flipping is applied **after** cropping and applies to the spatial axis:
-                  trl = trl[:, ::-1, :, :]
-
-            • Intensity (trial[1]) is stored in the trial structure for completeness,
-              but does not influence which frames are extracted.
+        Notes
+        -----
+        - pre/post time windows are automatically converted from seconds to frames.
+        - If `is_phase_scrambled` is True, frames are extracted from `self.vms_ps`.
+        - If `is_flipped` is True, frames are vertically flipped after cropping.
         """
 
         subject = trial[0]
@@ -245,15 +319,18 @@ class VideoManagerArray:
 
     def __getitem__(self, item):
         """
-        Allows for retrieving a specific video manager or trial data using indexing or a tuple.
+        Provide quick access to VideoManagers or raw trial windows.
 
-        Parameters:
-            item (int or tuple): If an int, returns the video manager at that index.
-            If a tuple, returns trial data for the specified [subject_index, trial_index, if_phase_scrambled (optional)],
-            adjusted for pre and post loading times based on fps.
+        Parameters
+        ----------
+        item : int or tuple
+            - If int → returns the VideoManager at that index.
+            - If tuple → interpreted as (subject, trial_index[, ...]) and returns
+              raw frames via VideoManager.get_trial().
 
-        Returns:
-            VideoManager or (frames,trg) trial , depending on the type of 'item'.
+        Returns
+        -------
+        VideoManager or (frames, trg)
         """
 
         # TODO extraction of upside down and phase scrambled?
@@ -266,14 +343,19 @@ class VideoManagerArray:
 
     def get_valid_trials(self, sub, shuffle=True):
         """
-        Returns a list of valid trials for a specified subject, optionally shuffled.
+        Return all valid trials for a given subject.
 
-        Parameters:
-            sub (int): Index of the subject to retrieve valid trials for.
-            shuffle (bool): If True, shuffles the order of returned trials. Default is True.
+        Parameters
+        ----------
+        sub : int
+            Subject index.
+        shuffle : bool
+            If True, shuffle the order of returned valid trials.
 
-        Returns:
-            List of tuples representing valid trials for the specified subject.
+        Returns
+        -------
+        list of tuples
+            Each tuple is of the form (subject, intensity, trial_number).
         """
         temp = [(sub, 0, t) for t in self.vms[sub].get_valid_trials(0)] + [(sub, 4, t) for t in
                                                                            self.vms[sub].get_valid_trials(4)]
@@ -283,10 +365,13 @@ class VideoManagerArray:
 
     def next_trial(self):
         """
-        Advances to and returns the next trial in the sequence.
+        Advance the internal pointer and return the next trial.
 
-        Returns:
-            Tuple representing the current trial in the sequence (subject, intensity, trial_num).
+        Returns
+        -------
+        tuple
+            The trial descriptor (subject, intensity, trial_number,
+            is_scrambled, is_flipped).
         """
         self.sequence_current += 1
         current_trial = self.sequence[self.sequence_current]
@@ -294,14 +379,30 @@ class VideoManagerArray:
 
     def has_next_trial(self):
         """
-        Checks if there is a next trial available in the sequence.
+        Check whether more trials are available in the experiment sequence.
 
-        Returns:
-            bool: True if there is a next trial available; False otherwise.
+        Returns
+        -------
+        bool
+            True if there is at least one more trial, False otherwise.
         """
         return self.sequence_current < len(self.sequence) - 1
 
     def reset_trial(self, reshuffle=True, shuffle_trials=None):
+        """
+        Reset the trial iterator and optionally rebuild/shuffle the sequence.
+
+        Parameters
+        ----------
+        reshuffle : bool
+            If True, the sequence is rebuilt and optionally reshuffled.
+        shuffle_trials : bool or None
+            Overrides the current shuffle setting if provided.
+
+        Returns
+        -------
+        None
+        """
         if reshuffle:
             if shuffle_trials is not None:
                 self.shuffle_trials = shuffle_trials
@@ -310,21 +411,30 @@ class VideoManagerArray:
 
     @staticmethod
     def preview(frames, window='Frames', fps=20, repeat=False):
+        """
+        Preview an array of frames using VideoManager.preview().
+        """
+
         VideoManager.preview(frames, window=window, fps=fps, repeat=repeat)
 
     def __len__(self):
         """
-        Returns the number of video managers contained within the array.
+        Number of upright VideoManagers loaded.
 
-        Returns:
-            int: The number of video managers.
+        Returns
+        -------
+        int
         """
         return len(self.upright)
 
     def close(self):
         """
-       Closes all video managers in the array, releasing any resources they hold.
-       """
+        Close all VideoManagers and release video resources.
+
+        Returns
+        -------
+        None
+        """
         for vm in self.vms:
             vm.close()
         if self.phase_scrambled:
@@ -333,17 +443,77 @@ class VideoManagerArray:
 
 
 class VideoManager:
+    """
+        VideoManager
+        ------------
+        A high-level interface for loading, processing, analyzing, and previewing
+        behavioral videos recorded during stimulation experiments.
+
+        The class supports:
+        - Video loading and property extraction (fps, resolution, frame count)
+        - Automatic trigger extraction from the first pixel or stored .npy file
+        - Trial detection, segmentation, and intensity assignment
+        - Habituation extraction
+        - Movement computation and visualization
+        - Previewing individual trials or full trial mosaics
+        - Generating videos or GIFs summarizing all trials
+        - Phase scrambling utilities for stimulus generation
+
+        Parameters
+        ----------
+        video_path : str
+            Full path to the input video file.
+        pattern : list of int, optional
+            A cyclic list of stimulation intensity labels. Each detected trigger
+            is assigned an intensity based on this pattern.
+
+        Notes
+        -----
+        Trigger extraction:
+            The trigger is encoded as the BGR value of the first pixel in each frame.
+            Values > 100 are considered "trigger ON".
+
+        Trial definition:
+            The index of each detected trigger is stored in `self.trigger_timestamp`.
+            Trials are segmented relative to those timestamps.
+
+        Usage Example
+        -------------
+        >>> vm = VideoManager("my_video.avi")
+        >>> info = vm.info()
+        >>> frames, trg = vm.get_trial(3)
+        >>> vm.preview_trial(3)
+    """
 
     def __init__(self, video_path, pattern=[0, 1, 2, 3, 4, 0, 4, 3, 2, 1]):
         """
-        Initializes the VideoManager with a specified video file.
+        Initialize the VideoManager, extract video metadata, load or compute
+        the trigger vector, detect trials, and build the intensity database.
 
-        Parameters:
-        - video_path (str): The path to the video file to be managed.
-        - pattern (list, optional): A list representing the stimulation intensity pattern to apply for each detected trigger event.
+        Parameters
+        ----------
+        video_path : str
+            Path to the .avi video file.
+        pattern : list of int
+            A list representing the stimulation intensity pattern assigned
+            cyclically to each detected trigger.
 
-        This constructor sets up the video capture, calculates video properties (total frames, fps, dimensions), detects trigger events based on the first pixel's BGR value, and initializes variables for managing stimuli intensity and habituation indices.
-        """
+        Behavior
+        --------
+        - Loads video file using OpenCV.
+        - Computes metadata: fps, resolution, total frames.
+        - Loads trigger array from disk if available, otherwise computes it by
+          reading pixel (0,0) of each frame.
+        - Detects trigger timestamps via peak detection.
+        - Assigns stimulation intensities.
+        - Loads trial validity information from recordings.xlsx.
+        - Prepares helper attributes for visualization and preview.
+
+        Side Effects
+        ------------
+        - Creates a `.npy` trigger file if not already present.
+        - Reads `recordings.xlsx` from the video's directory.
+    """
 
         self.video_path = video_path
         self.rec = Path(video_path).stem
@@ -405,12 +575,21 @@ class VideoManager:
 
     def plot_trigger(self, ax=None):
         """
-        Plots the trigger signal used to detect events in the video.
+        Plot the normalized trigger signal and detected trigger events.
 
-        Parameters:
-        - ax (matplotlib.axes.Axes, optional): The axes on which to plot the trigger signal. If None, a new figure and axes are created.
+        The trigger is derived from the first pixel of each frame. This method
+        shows the binarized trigger vector and marks detected trigger peaks.
 
-        This method visualizes the normalized trigger signal and marks the detected triggers.
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes, optional
+            Axes on which to plot the trigger signal. If None, a new figure
+            and axes are created.
+
+        Returns
+        -------
+        matplotlib.axes.Axes
+            Axes containing the trigger plot.
         """
         if ax is None:
             fig, ax = plt.subplots(figsize=(8, 4))
@@ -419,16 +598,28 @@ class VideoManager:
 
     def plot_movement(self, trial_num, pre=60, post=60, ax=None):
         """
-        Plots the movement index for a specified trial.
+        Plot the movement index across a single trial.
 
-        Parameters:
-        - trial_num (int): The trial number to analyze.
-        - pre (int, optional): The number of frames before the trigger to include in the analysis.
-        - post (int, optional): The number of frames after the trigger to include in the analysis.
-        - phase_scrambled (bool, optional,deprecated): If True, applies phase scrambling to the video frames before analysis.
-        - ax (matplotlib.axes.Axes, optional): The axes on which to plot the movement index. If None, a new figure and axes are created.
+        Movement is quantified as frame-to-frame difference using
+        `frame_movements`. This method extracts a trial window, computes
+        movement indices for all frames, and plots them.
 
-        This method calculates and plots the movement index across the specified trial.
+        Parameters
+        ----------
+        trial_num : int
+            Trial index (0-based) to analyze.
+        pre : int, optional
+            Number of frames before the trigger to include.
+        post : int, optional
+            Number of frames after the trigger to include.
+        ax : matplotlib.axes.Axes, optional
+            Axes on which to plot the movement index. If None, a new figure
+            and axes are created.
+
+        Returns
+        -------
+        matplotlib.axes.Axes
+            Axes containing the movement trace for the selected trial.
         """
         trial, trg = self.get_trial(trial_num, pre, post)
         movement_index = list()
@@ -449,14 +640,22 @@ class VideoManager:
 
     def plot_movement_matrix(self, pre=60, post=60):
         """
-        Plots a matrix of movement indices for multiple trials.
+        Plot a 2D matrix of movement traces for all trials.
 
-        Parameters:
-        - pre (int, optional): The number of frames before the trigger to include in the analysis.
-        - post (int, optional): The number of frames after the trigger to include in the analysis.
-        - phase_scrambled (bool, optional, deprecated): If True, applies phase scrambling to the video frames before analysis.
+        The resulting figure has intensity on the rows and repetition number
+        on the columns. Each subplot shows the movement index for one trial.
 
-        This method visualizes the movement index for multiple trials in a matrix form, facilitating the comparison across different stimuli intensities and repetitions.
+        Parameters
+        ----------
+        pre : int, optional
+            Frames before the trigger to include in each trial window.
+        post : int, optional
+            Frames after the trigger to include in each trial window.
+
+        Returns
+        -------
+        matplotlib.figure.Figure
+            Figure containing the movement matrix.
         """
         fig, ax = plt.subplots(5, 6, figsize=(5, 5), sharey=True)
         fig.supylabel('Intensity', fontsize=16)
@@ -487,16 +686,26 @@ class VideoManager:
                              outdir="graphs",
                              fmt="svg"):
         """
-        Saves the movement matrix plot without showing it.
+        Compute and save the movement matrix for all trials to disk.
 
-        Parameters:
-            pre (int): Frames before trigger.
-            post (int): Frames after trigger.
-            outdir (str): Output directory (auto-created if needed).
-            fmt (str): File format ('svg', 'png', 'pdf', 'jpg', ...).
+        This is similar to `plot_movement_matrix` but writes the figure
+        directly to a file and closes the figure instead of displaying it.
 
-        Returns:
-            str: Path of the saved file.
+        Parameters
+        ----------
+        pre : int, optional
+            Frames before trigger to include in each trial window.
+        post : int, optional
+            Frames after trigger to include in each trial window.
+        outdir : str, optional
+            Output directory for the figure. Created if it does not exist.
+        fmt : str, optional
+            Image format for saving (for example 'svg', 'png', 'pdf', 'jpg').
+
+        Returns
+        -------
+        str
+            Path of the saved file.
         """
 
         # Create output folder if needed
@@ -546,16 +755,22 @@ class VideoManager:
 
     def get_frame(self, i, flip_vertical=False):
         """
-        Retrieves a specific frame from the video.
+        Retrieve a single frame by index.
 
-        Parameters:
-        - i (int): The index of the frame to retrieve.
-        - flip_vertical (bool, optional): If True, the frame is flipped vertically. Defaults to False.
+        This performs a seek to frame i and then reads a single frame. It is
+        relatively slow for many random accesses.
 
-        Returns:
-        - frame (numpy.ndarray): The requested frame as an array.
+        Parameters
+        ----------
+        i : int
+            Index of the frame to retrieve (0-based).
+        flip_vertical : bool, optional
+            If True, the frame is flipped vertically.
 
-        This method is relatively slow for random access and is not recommended for frequent use.
+        Returns
+        -------
+        numpy.ndarray or None
+            The requested frame as a HxWx3 array, or None if reading fails.
         """
         self.gotoframe(i)
         ret, frame = self.cap.read()
@@ -567,19 +782,25 @@ class VideoManager:
 
     def get_frames(self, from_frame, to_frame, to_norm=False, flip_vertical=False):
         """
-        Retrieves a sequence of frames from the video in RGB format.
+        Retrieve a sequence of frames as a 3D or 4D array.
 
-        Parameters:
-        - from_frame (int): The index of the first frame in the sequence to retrieve.
-        - to_frame (int): The index of the last frame in the sequence to retrieve, exclusive.
-        - to_norm (bool, optional): If True, frames are converted to normalized grayscale. Defaults to False.
-        - flip_vertical (bool, optional): If True, each frame is flipped vertically. Defaults to False.
+        Parameters
+        ----------
+        from_frame : int
+            Index of the first frame to retrieve (inclusive).
+        to_frame : int
+            Index of the last frame to retrieve (exclusive).
+        to_norm : bool, optional
+            If True, frames are converted to normalized grayscale and mean-centered.
+        flip_vertical : bool, optional
+            If True, each frame is flipped vertically.
 
-        Returns:
-        - res (numpy.ndarray): A 4D array containing the retrieved frames.
-          Shape: (number_of_frames, height, width, 3) for RGB or (number_of_frames, height, width) if normalized.
-
-        This method extracts a sequence of frames from the video, optionally normalizes or flips them.
+        Returns
+        -------
+        numpy.ndarray
+            A 4D array of shape (N, H, W, 3) for RGB frames, or
+            (N, H, W) for normalized grayscale frames, where N is
+            to_frame - from_frame.
         """
         if to_norm:
             res = np.zeros((to_frame - from_frame, self.height, self.width), dtype=np.float32)
@@ -597,17 +818,23 @@ class VideoManager:
 
     def get_habituation(self, to_norm=True, flip_vertical=False):
         """
-        Retrieves the frames corresponding to the habituation phase of the video.
+        Retrieve all frames belonging to the habituation phase.
 
-        Parameters:
-        - to_norm (bool, optional): If True, frames are converted to normalized grayscale. Defaults to True.
-        - flip_vertical (bool, optional): If True, frames are flipped vertically. Defaults to False.
+        The habituation segment is defined by `self.habituation_inds`, which
+        is set at initialization based on the first trigger.
 
-        Returns:
-        - res (numpy.ndarray): Frames from the habituation phase.
-          Shape: (number_of_frames, height, width, 3) for RGB or (number_of_frames, height, width) if normalized.
+        Parameters
+        ----------
+        to_norm : bool, optional
+            If True, frames are converted to normalized grayscale and mean-centered.
+        flip_vertical : bool, optional
+            If True, frames are flipped vertically.
 
-        This method extracts the frames from the habituation phase using the stored indices.
+        Returns
+        -------
+        numpy.ndarray
+            Frames from the habituation phase as either RGB or normalized
+            grayscale, depending on `to_norm`.
         """
         return self.get_frames(
             self.habituation_inds[0],
@@ -618,15 +845,17 @@ class VideoManager:
 
     def get_next_frame(self, flip_vertical=False):
         """
-        Retrieves the next frame from the video.
+        Read the next frame in sequence from the video.
 
-        Parameters:
-        - flip_vertical (bool, optional): If True, the frame is flipped vertically. Defaults to False.
+        Parameters
+        ----------
+        flip_vertical : bool, optional
+            If True, the frame is flipped vertically.
 
-        Returns:
-        - frame (numpy.ndarray or None): The next frame as an array, or None if reading fails.
-
-        This method simplifies sequential frame retrieval during video playback or analysis.
+        Returns
+        -------
+        numpy.ndarray or None
+            The next frame as an array, or None if reading fails.
         """
         ret, frame = self.cap.read()
         if not ret:
@@ -639,19 +868,32 @@ class VideoManager:
 
     def get_trial(self, trial, pre=60, post=60, to_norm=False, flip_vertical=False):
         """
-        Extracts a trial from the video with a specified pre- and post-interval around the trigger.
+        Extract a time window around a given trigger (trial).
 
-        Parameters:
-        - trial (int): The index of the trigger event around which to extract the trial.
-        - pre (int, optional): The number of frames before the trigger to include in the trial.
-        - post (int, optional): The number of frames after the trigger to include in the trial.
-        - to_norm (bool, optional): If True, frames are converted to normalized grayscale. Defaults to False.
+        The trial window is centered on the trigger timestamp and extends
+        `pre` frames before and `post` frames after.
 
-        Returns:
-        - res (numpy.ndarray): The extracted frames as an array.
-        - trg (numpy.ndarray): An array indicating the trigger point within the trial.
+        Parameters
+        ----------
+        trial : int
+            Index of the trigger (trial) to extract.
+        pre : int, optional
+            Number of frames before the trigger to include.
+        post : int, optional
+            Number of frames after the trigger to include.
+        to_norm : bool, optional
+            If True, frames are converted to normalized grayscale and mean-centered.
+        flip_vertical : bool, optional
+            If True, frames are flipped vertically.
 
-        This method allows for the extraction of segments from the video based on detected trigger events, useful for analyzing specific events within the video.
+        Returns
+        -------
+        res : numpy.ndarray
+            Extracted frames with shape (pre + post, H, W, 3) for RGB, or
+            (pre + post, H, W) if `to_norm` is True.
+        trg : numpy.ndarray
+            A 1D array (length equal to number of frames) with a single 1
+            at the trigger index and 0 elsewhere.
         """
 
         i = self.trigger_timestamp[trial] - pre  # Example start frame
@@ -672,17 +914,38 @@ class VideoManager:
     def preview_trial(self, trial_num, pre=60, post=60, showlabels=True, repeat=False, window='Frame', movements=True,
                       movements_overlay=False, ylims=(0, 60000)):
         """
-           Displays a preview of a specific trial.
+        Preview a single trial as an OpenCV window animation.
 
-           Parameters:
-           - trial_num (int): The trial index to preview.
-           - pre (int, optional): Number of frames before the trigger to show.
-           - post (int, optional): Number of frames after the trigger to show.
-           - showlabels (bool, optional): Whether to display text labels.
-           - repeat (bool, optional): Whether to loop the preview.
-           - window (str, optional): The name of the window to display the preview.
-           - movements (bool, optional): Whether to highlight movements.
-       """
+        The method extracts a trial window, optionally overlays labels,
+        highlights movement, and allows repeated playback until 'q' is pressed.
+
+        Parameters
+        ----------
+        trial_num : int
+            Index of the trial to preview.
+        pre : int, optional
+            Frames before the trigger to include.
+        post : int, optional
+            Frames after the trigger to include.
+        showlabels : bool, optional
+            If True, shows trial, intensity, and PRE/POST labels on the frame.
+        repeat : bool, optional
+            If True, loops the trial playback.
+        window : str, optional
+            Name of the OpenCV window.
+        movements : bool, optional
+            If True, computes and optionally overlays movement information.
+        movements_overlay : bool, optional
+            If True, overlays motion mask on the video frames.
+        ylims : tuple, optional
+            Y-axis limits for the movement trace drawn on the frame.
+
+        Returns
+        -------
+        None
+            The function opens an OpenCV window and blocks until playback ends
+            or 'q' is pressed.
+        """
         trial, trg = self.get_trial(trial_num, pre, post, )
         text_stage = 'PRE'
         f = 0
@@ -761,12 +1024,27 @@ class VideoManager:
 
     def previewAllTrials(self, pre=100, post=100, frame_height=700):
         """
-        Previews all trials in a single window.
+        Preview all trials in a single mosaic played as a video.
 
-        Parameters:
-        - pre (int, optional): Frames before each trigger to include.
-        - post (int, optional): Frames after each trigger to include.
-        - frame_height (int, optional): Height of the preview window.
+        Each trial is resized and arranged in a grid with:
+        - rows = stimulation intensities
+        - columns = repetitions
+
+        The mosaic is then animated over time to show all trials in parallel.
+
+        Parameters
+        ----------
+        pre : int, optional
+            Frames before each trigger to include in the trial segments.
+        post : int, optional
+            Frames after each trigger to include.
+        frame_height : int, optional
+            Height of the mosaic preview window.
+
+        Returns
+        -------
+        None
+            Opens an OpenCV window and animates the mosaic until 'q' is pressed.
         """
 
         font = cv2.FONT_HERSHEY_SIMPLEX
@@ -831,13 +1109,26 @@ class VideoManager:
 
     def previewAllTrials2Video(self, pre=100, post=100, frame_height=700, video_filename=None):
         """
-        Generates and saves a video with the video on the hard disk.
+        Generate and save a mosaic video of all trials.
 
-        Parameters:
-        - pre (int, optional): Frames before each trigger to include.
-        - post (int, optional): Frames after each trigger to include.
-        - frame_height (int, optional): Height of the preview window.
-        - video_filename (str, optional): Name of the output video file.
+        Similar to `previewAllTrials`, but instead of showing the mosaic live,
+        this method writes it to a video file on disk.
+
+        Parameters
+        ----------
+        pre : int, optional
+            Frames before each trigger to include in the trial segments.
+        post : int, optional
+            Frames after each trigger to include.
+        frame_height : int, optional
+            Height of the mosaic frames in the saved video.
+        video_filename : str, optional
+            Output video filename. If None, uses "<rec>.mp4".
+
+        Returns
+        -------
+        None
+            Writes a video file with the mosaic of all trials.
         """
 
         if video_filename is None:
@@ -903,15 +1194,32 @@ class VideoManager:
                              dither=False,
                              palette=256):
         """
-        Generates and saves an optimized GIF for the full preview mosaic.
+        Generate and save a GIF preview of the full trial mosaic.
 
-        Parameters:
-            pre, post : trial window
-            frame_height : mosaic height
-            gif_filename : output name (.gif)
-            resize_factor : scale output (1.0 = full size, 0.5 = half)
-            dither : enable/disable Pillow dithering
-            palette : number of colors (max 256)
+        This method builds the same mosaic representation used by
+        `previewAllTrials`, but then exports it as an optimized GIF using PIL.
+
+        Parameters
+        ----------
+        pre : int, optional
+            Frames before each trigger to include in each trial window.
+        post : int, optional
+            Frames after each trigger to include.
+        frame_height : int, optional
+            Height of the mosaic in pixels.
+        gif_filename : str, optional
+            Output GIF filename. If None, uses "<rec>.gif".
+        resize_factor : float, optional
+            Scale factor applied to the final frames (1.0 = full size, 0.5 = half).
+        dither : bool, optional
+            If True, enables Floyd-Steinberg dithering in the palette reduction.
+        palette : int, optional
+            Size of the color palette (max 256).
+
+        Returns
+        -------
+        None
+            Writes an animated GIF to disk.
         """
 
         from PIL import Image
@@ -998,32 +1306,50 @@ class VideoManager:
 
     def reset(self):
         """
-        Resets the video to the first frame.
+        Reset the video position to the first frame.
 
-        This method is useful for restarting the analysis or preview from the beginning of the video.
+        This is useful when restarting analysis or preview from the beginning.
         """
         self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
 
     def gotoframe(self, i):
         """
-        Sets the current video position to a specified frame.
+        Seek to a specific frame index in the video.
 
-        Parameters:
-        - i (int): The frame number to jump to.
+        Parameters
+        ----------
+        i : int
+            Frame index to seek to.
 
-        This method enables direct access to any frame in the video, adjusting the internal pointer to the specified frame number.
+        Returns
+        -------
+        None
         """
         self.cap.set(cv2.CAP_PROP_POS_FRAMES, i)
 
     def close(self):
         """
-       Releases the video capture object.
+        Release the underlying OpenCV VideoCapture resource.
 
-       This method should be called when the VideoManager instance is no longer needed, to properly release system resources.
-       """
+        Call this when the VideoManager instance is no longer needed.
+        """
         self.cap.release()
 
     def get_valid_trials(self, intensity):
+        """
+        Get indices of valid trials for a given stimulation intensity.
+
+        Parameters
+        ----------
+        intensity : int
+            Stimulation intensity label for which to retrieve valid trials.
+
+        Returns
+        -------
+        list of int
+            Indices of trials that match the requested intensity and are marked
+            as valid in `stim_db`.
+        """
         valids = self.stim_db[self.stim_db['valid'] == 1]
         temp = list(valids[valids['intensity'] == intensity].index)
         return temp
@@ -1031,18 +1357,29 @@ class VideoManager:
     @staticmethod
     def frame_movements(prev_frame, curr_frame, gfilt=5, thr=10):
         """
-       Calculates movement between two frames.
+        Compute movement between two frames using absolute difference.
 
-       Parameters:
-       - prev_frame (numpy.ndarray): The previous frame.
-       - curr_frame (numpy.ndarray): The current frame.
-       - gfilt (int, optional): Gaussian filter size.
-       - thr (int, optional): Threshold for movement detection.
+        Both frames are blurred, subtracted, thresholded, and the number of
+        non-zero pixels in the thresholded image is used as a movement index.
 
-       Returns:
-       - thresh_frame (numpy.ndarray): Thresholded frame showing movement.
-       - movement_index (int): The quantity of movement detected.
-       """
+        Parameters
+        ----------
+        prev_frame : numpy.ndarray
+            Previous frame (HxW or HxWx3).
+        curr_frame : numpy.ndarray
+            Current frame (HxW or HxWx3).
+        gfilt : int, optional
+            Gaussian kernel size used for blurring.
+        thr : int, optional
+            Threshold for detecting motion in the difference image.
+
+        Returns
+        -------
+        thresh_frame : numpy.ndarray
+            Thresholded difference frame, same size as input frames.
+        movement_index : int
+            Number of non-zero pixels in `thresh_frame`, indicating motion level.
+        """
 
         if len(curr_frame.shape) > 2:
             curr_frame = cv2.cvtColor(curr_frame, cv2.COLOR_BGR2GRAY)
@@ -1061,16 +1398,21 @@ class VideoManager:
     @staticmethod
     def list_videos(pth='res\\upright', verbosity=0, ext='avi'):
         """
-        Lists all videos in a specified directory.
+        List all video files in a given directory with a given extension.
 
-        Parameters:
-        - pth (str, optional): The path to the directory containing video files. Defaults to 'res'.
-        - verbosity (int, optional): The level of verbosity for output. A non-zero value prints the list of video files.
+        Parameters
+        ----------
+        pth : str, optional
+            Path to the directory containing video files.
+        verbosity : int, optional
+            If non-zero, prints the found videos to stdout.
+        ext : str, optional
+            File extension to filter for (for example 'avi').
 
-        Returns:
-        - videos (list of str): A list of video file paths.
-
-        This static method provides a utility function to retrieve and optionally print a list of video files in a given directory.
+        Returns
+        -------
+        list of str
+            List of full paths to video files matching the extension.
         """
         videos = os.listdir(pth)
         videos = [os.path.join(pth, v) for v in videos]
@@ -1084,19 +1426,29 @@ class VideoManager:
     @staticmethod
     def phase_scramble_image(frame, phase_scrambling_matrix=None, seed=None, to_rgb=False):
         """
-        Applies phase scrambling to an image.
+        Apply Fourier phase scrambling to an image.
 
-        Parameters:
-        - frame (numpy.ndarray): Image to scramble.
-        - phase_scrambling_matrix (numpy.ndarray, optional): Pre-generated phase matrix.
-        - seed (int, optional): Seed for reproducibility.
-        - to_rgb (bool, optional): Whether to convert the output to RGB.
+        The magnitude spectrum is preserved while phase is randomized or
+        shuffled, which preserves low-level statistics but disrupts semantic
+        content.
 
-        Returns:
-        - scrambled_frame_normalized (numpy.ndarray): Scrambled image.
-        - phase_scrambling_matrix (numpy.ndarray): Used or generated phase matrix.
+        Parameters
+        ----------
+        frame : numpy.ndarray
+            Input image (HxWx3, BGR).
+        phase_scrambling_matrix : numpy.ndarray, optional
+            Precomputed phase matrix to reuse for temporal consistency.
+        seed : int, optional
+            Random seed for reproducibility when generating new phase matrices.
+        to_rgb : bool, optional
+            If True, the output is converted back to 3-channel RGB.
 
-        For techniques like phase scrambling, maintaining the same phase shifts or randomization patterns for moving objects across frames can help preserve temporal coherence. This approach ensures that while the content may be scrambled, its movement remains smooth and consistent across frames.
+        Returns
+        -------
+        scrambled_frame_normalized : numpy.ndarray
+            Phase-scrambled image in uint8.
+        phase_scrambling_matrix : numpy.ndarray
+            Phase matrix used for scrambling, which can be reused for other frames.
         """
 
         if seed is not None:
@@ -1127,6 +1479,22 @@ class VideoManager:
 
     @staticmethod
     def shuffle_2d_array(arr):
+        """
+        Randomly shuffle the elements of a 2D array.
+
+        This is used to randomize the phase map while preserving the global
+        distribution of phase values.
+
+        Parameters
+        ----------
+        arr : numpy.ndarray
+            Input 2D array.
+
+        Returns
+        -------
+        numpy.ndarray
+            Shuffled array with the same shape as input.
+        """
         # Flatten the array
         flat_arr = arr.flatten()
 
@@ -1141,13 +1509,25 @@ class VideoManager:
     @staticmethod
     def preview(frames, window='Frames', fps=20, repeat=False):
         """
-        Displays a preview of frames.
+        Preview an array of frames in an OpenCV window.
 
-        Parameters:
-        - frames (numpy.ndarray): Frames to display.
-        - window (str, optional): Window name.
-        - fps (int, optional): Frames per second for playback.
-        - repeat (bool, optional): Whether to loop the playback.
+        Frames can be either 3D (N, H, W) or 4D (N, H, W, C). Playback runs
+        until the sequence ends or the user presses 'q'.
+
+        Parameters
+        ----------
+        frames : numpy.ndarray
+            Array of frames to display.
+        window : str, optional
+            Name of the OpenCV window.
+        fps : int, optional
+            Frames per second for playback.
+        repeat : bool, optional
+            If True, loops playback when it reaches the end.
+
+        Returns
+        -------
+        None
         """
         i = 0
         print('Press Q to close the window')
@@ -1174,34 +1554,28 @@ class VideoManager:
     @staticmethod
     def calculate_movement_indices(frames):
         """
-        Calculates movement indices for a sequence of frames.
+        Compute movement indices for a sequence of frames.
 
-        This method computes the movement index for each pair of consecutive frames
-        in a given 4D matrix of frames. The movement index is calculated as the sum
-        of absolute differences between consecutive frames, which indicates the amount
-        of change or movement between them.
+        Movement between each pair of consecutive frames is computed using
+        `frame_movements`. The resulting 1D list can be used as a time series
+        of motion energy.
 
-        Parameters:
-        - frames (numpy.ndarray): A 4D numpy array of frames with shape (num_frames, height, width, channels).
+        Parameters
+        ----------
+        frames : numpy.ndarray
+            4D array of frames with shape (N, H, W, C).
 
-        Returns:
-        - movement_indices (list of int): A list containing the movement index for each pair of consecutive frames.
+        Returns
+        -------
+        list of int
+            Movement index for each frame pair (length N, with the first
+            element set to 0).
         """
-        # Convert frames to grayscale if they are in color
-        # if frames.shape[-1] == 3:
-        #    gray_frames = np.array([cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) for frame in frames])
-        # else:
-        #    gray_frames = frames
 
         # Calculate movement indices
         movement_indices = []
         movement_indices.append(0)
         for i in range(1, frames.shape[0]):
-            # Calculate the absolute difference between consecutive frames
-            # diff = cv2.absdiff(gray_frames[i-1], gray_frames[i])
-            # Sum all differences to get the movement index
-            # movement_index = np.sum(diff)
-            # movement_indices.append(movement_index)
             _, mi = VideoManager.frame_movements(frames[i - 1, :, :, :], frames[i, :, :, :])
             movement_indices.append(mi)
 
@@ -1211,14 +1585,34 @@ class VideoManager:
     def draw_plot_on_frame(frame, data_points, max_data_length=50, plot_dimensions=(200, 100), margin=10, offset=None,
                            ymin=None, ymax=None):
         """
-        Draw a simple line plot directly on a video frame using OpenCV.
+            Draw a simple line plot of data directly on a video frame.
 
-        :param frame: The current video frame.
-        :param data_points: List of data points to plot.
-        :param max_data_length: Maximum number of data points to display in the plot.
-        :param plot_dimensions: Tuple of the plot size (width, height).
-        :param margin: Margin around the plot inside the plotting area.
-        :param offset: position (x,y) of the plot inside the frame (default is lower right).
+            This is used to overlay movement traces on top of video frames using
+            pure OpenCV operations.
+
+            Parameters
+            ----------
+            frame : numpy.ndarray
+                Current video frame (HxWx3).
+            data_points : list of float or int
+                Data values to plot.
+            max_data_length : int, optional
+                Maximum number of recent data points to display.
+            plot_dimensions : tuple of int, optional
+                Size of the plot (width, height) in pixels.
+            margin : int, optional
+                Margin inside the plotting area.
+            offset : tuple of int, optional
+                (x, y) position of the plot in the frame. If None, the plot is
+                placed in the bottom right corner.
+            ymin, ymax : float, optional
+                Explicit minimum and maximum values for scaling. If None, they
+                are inferred from data_points.
+
+            Returns
+            -------
+            numpy.ndarray
+                Frame with the plot drawn on it.
         """
 
         frame = frame.copy()
@@ -1258,7 +1652,28 @@ class VideoManager:
 
     def info(self):
         """
-        Returns a dictionary with information about the video.
+        Return a dictionary with summary information about the recording.
+
+        The dictionary contains basic video metadata, trigger/trial information,
+        and a count of valid and invalid trials per `recordings.xlsx`.
+
+        Returns
+        -------
+        dict
+            Information dictionary with keys:
+            - file
+            - recording_name
+            - fps
+            - total_frames
+            - resolution
+            - duration_sec
+            - duration_min
+            - num_trials
+            - first_trigger_frame
+            - last_trigger_frame
+            - intensity_counts
+            - valid_trials
+            - invalid_trials
         """
 
         dur_sec = self.total_frames / self.fps
