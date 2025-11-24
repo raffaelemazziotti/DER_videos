@@ -1,6 +1,11 @@
 /* -------------------------------------------------------
    Base layout
 ------------------------------------------------------- */
+
+* {
+    box-sizing: border-box;
+}
+
 body {
     font-family: Arial, sans-serif;
     margin: 0;
@@ -9,7 +14,26 @@ body {
     line-height: 1.4;
 }
 
-/* max width constraint */
+header {
+    background: #333;
+    color: #f5f5f5;
+    padding: 20px 16px;
+    text-align: center;
+}
+
+header h1 {
+    margin: 0 0 4px 0;
+    font-size: 1.8rem;
+}
+
+header p {
+    margin: 0;
+    font-size: 0.95rem;
+    opacity: 0.9;
+}
+
+/* max width constraint for sections */
+
 section {
     max-width: 1100px;
     margin: 0 auto;
@@ -17,32 +41,18 @@ section {
 }
 
 /* -------------------------------------------------------
-   Header
+   Badge row
 ------------------------------------------------------- */
-header {
-    background: #222;
-    color: white;
-    padding: 20px 16px;
-    text-align: center;
-}
 
-header h1 {
-    margin-bottom: 6px;
-}
-
-
-/* -------------------------------------------------------
-   Links section
-------------------------------------------------------- */
 #links-section {
-    padding-top: 10px;
+    padding-top: 16px;
 }
 
 .badge-container {
     display: flex;
-    gap: 10px;
     flex-wrap: wrap;
-    align-items: center;
+    gap: 10px;
+    justify-content: center;
 }
 
 .badge-container img {
@@ -56,96 +66,155 @@ header h1 {
 }
 
 /* -------------------------------------------------------
-   Trigger + Example description
+   Trigger + Description layout
 ------------------------------------------------------- */
-#trigger-combo p {
-    text-align: justify;
-    font-size: 0.95rem;
-}
 
-/* Example/trigger images */
-#trigger-img,
-#example-trial {
-    max-width: 300px;
-    border: 1px solid #ccc;
-    display: block;
-    margin: 10px auto 20px auto;
-}
-
-/* Two-column layout */
 #trigger-combo {
     display: flex;
-    gap: 40px;
+    gap: 20px;
+    align-items: flex-start;
     flex-wrap: wrap;
 }
 
 .trigger-col {
-    flex: 1;
-    min-width: 280px;
+    flex: 1 1 260px;
+}
+
+#trigger-img {
+    max-width: 100%;
+    border: 1px solid #ccc;
+    display: block;
+    margin-top: 10px;
 }
 
 /* -------------------------------------------------------
-   Dataset browser
+   API Documentation
 ------------------------------------------------------- */
-#dataset-container {
-    margin-top: 10px;
-    background: white;
+
+#api-docs {
+    text-align: center;
+    padding-top: 30px;
+}
+
+#api-docs h2 {
+    margin-bottom: 8px;
+}
+
+.api-text {
+    max-width: 700px;
+    margin: 0 auto 20px auto;
+    font-size: 0.95rem;
+    color: #444;
+}
+
+.api-button {
+    display: inline-block;
+    background: #5a5a5a;
+    color: white;
+    padding: 16px 32px;
     border-radius: 8px;
-    padding: 16px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    font-weight: 600;
+    font-size: 18px;
+    text-decoration: none;
+    font-family: Arial, sans-serif;
+    min-width: 240px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.api-button:hover {
+    background: #6e6e6e;
+    transform: scale(1.03);
+}
+
+/* -------------------------------------------------------
+   Dataset section
+------------------------------------------------------- */
+
+#dataset-section h2 {
+    margin-bottom: 10px;
+}
+
+#dataset-container {
+    background: #f7f7f7;
+    border: 1px solid #ccc;
+    padding: 12px;
+    border-radius: 6px;
+    min-height: 120px;
+    font-size: 0.95rem;
+}
+
+/* Recording controls */
+
+#dataset-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+#dataset-controls label {
+    font-weight: bold;
 }
 
 #recording-select {
-    margin-left: 8px;
-    padding: 5px 8px;
-    min-width: 180px;
+    padding: 4px 8px;
 }
 
 /* Metadata table */
+
 #recording-details table {
     border-collapse: collapse;
-    margin-bottom: 15px;
+    width: 100%;
+    margin-bottom: 10px;
+    background: white;
 }
 
 #recording-details td {
-    padding: 4px 8px;
+    border: 1px solid #ddd;
+    padding: 4px 6px;
     font-size: 0.9rem;
 }
 
-#recording-details td:first-child {
-    font-weight: bold;
-    white-space: nowrap;
+#recording-details tr:nth-child(odd) {
+    background: #fafafa;
 }
 
-/* -------------------------------------------------------
-   Preview area (GIF + SVG)
-------------------------------------------------------- */
+#recording-details td:first-child {
+    width: 180px;
+    font-weight: bold;
+}
+
+/* Preview row */
+
 .preview-row {
     display: flex;
-    gap: 20px;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 8px;
 }
 
 .preview-item1,
 .preview-item2 {
-    flex: 1;
-    min-width: 260px;
+    flex: 1 1 260px;
 }
 
-/* Titles */
 .preview-item1 h3,
 .preview-item2 h3 {
-    margin: 0 0 8px 0;
+    margin: 0 0 4px 0;
+    font-size: 1rem;
 }
 
-/* Responsive aspect-ratio box */
+/* Box that contains img or video */
+
 .preview-box {
     width: 100%;
-    aspect-ratio: 4 / 3;     /* same height ratio for both items */
+    aspect-ratio: 4 / 3;
     border: 1px solid #ccc;
     background: #fff;
     padding: 6px;
-    box-sizing: border-box;
-
     display: flex;
     align-items: center;
     justify-content: center;
@@ -158,53 +227,48 @@ header h1 {
     object-fit: contain;
 }
 
-/* SVG override not needed anymore. */
+/* Make videos behave like images inside preview boxes */
+
+.preview-box video {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
 
 /* -------------------------------------------------------
    Footer
 ------------------------------------------------------- */
+
 footer {
     text-align: center;
-    padding: 20px;
-    color: #666;
-    font-size: 0.75rem;
+    padding: 12px 8px 18px 8px;
+    font-size: 0.85rem;
+    color: #555;
 }
 
 /* -------------------------------------------------------
-   Responsive: Tablet
+   Responsive
 ------------------------------------------------------- */
-@media (max-width: 900px) {
 
-    .preview-row {
-        flex-wrap: wrap;
+@media (max-width: 768px) {
+
+    header h1 {
+        font-size: 1.5rem;
+    }
+
+    #trigger-combo {
         flex-direction: column;
     }
 
-    /* Remove fixed aspect-ratio on mobile */
-    .preview-box {
-        aspect-ratio: auto;
-        height: auto;
-    }
-
-    .preview-box img {
-        width: 100%;
-        height: auto;
-        max-height: none;
-    }
-
-    #recording-select {
-        width: 100%;
-        margin: 10px 0 0 0;
+    .preview-row {
+        flex-direction: column;
     }
 }
 
-/* -------------------------------------------------------
-   Responsive: Phone
-------------------------------------------------------- */
 @media (max-width: 480px) {
 
     header h1 {
-        font-size: 1.4rem;
+        font-size: 1.35rem;
     }
 
     h2 {
@@ -213,5 +277,10 @@ footer {
 
     .badge-container img {
         height: 24px;
+    }
+
+    .api-button {
+        font-size: 16px;
+        padding: 12px 24px;
     }
 }

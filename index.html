@@ -17,92 +17,95 @@
         <p>Experimental Dataset, Video Browser, Python Library</p>
     </header>
 
+    <!-- Badges / Links -->
     <section id="links-section">
+        <div class="badge-container">
 
-    <div class="badge-container">
+            <!-- Zenodo DOI -->
+            <a href="https://doi.org/10.5281/zenodo.17661945" target="_blank" rel="noopener">
+                <img src="https://img.shields.io/badge/Zenodo-Dataset-blue?logo=zenodo&logoColor=white"
+                     alt="Zenodo Dataset Badge">
+            </a>
 
-        <!-- Zenodo DOI -->
-        <a href="https://doi.org/10.5281/zenodo.17661945" target="_blank" rel="noopener">
-            <img src="https://img.shields.io/badge/Zenodo-Dataset-blue?logo=zenodo&logoColor=white"
-                 alt="Zenodo Dataset Badge">
-        </a>
+            <!-- GitHub -->
+            <a href="https://github.com/raffaelemazziotti/DER_videos" target="_blank" rel="noopener">
+                <img src="https://img.shields.io/badge/GitHub-Repository-black?logo=github"
+                     alt="GitHub Repository Badge">
+            </a>
 
-        <!-- GitHub -->
-        <a href="https://github.com/raffaelemazziotti/DER_videos" target="_blank" rel="noopener">
-            <img src="https://img.shields.io/badge/GitHub-Repository-black?logo=github"
-                 alt="GitHub Repository Badge">
-        </a>
+            <!-- Preprint -->
+            <a href="https://doi.org/10.1101/2024.11.20.624327" target="_blank" rel="noopener">
+                <img src="https://img.shields.io/badge/BioRxiv-Preprint-red?logo=arxiv&logoColor=white"
+                     alt="BioRxiv Preprint Badge">
+            </a>
+        </div>
+    </section>
 
-        <!-- Preprint -->
-        <a href="https://doi.org/10.1101/2024.11.20.624327" target="_blank" rel="noopener">
-            <img src="https://img.shields.io/badge/BioRxiv-Preprint-red?logo=arxiv&logoColor=white"
-                alt="BioRxiv Preprint Badge">
-        </a>
-    </div>
-</section>
-
+    <!-- Description + Example trial + Trigger plot -->
     <section id="trigger-combo">
-    <div class="trigger-col">
-        <h2>Description</h2>
-        <p> The videos are recordings of experimental sessions lasting more than 30 minutes,
-            during which the mouse is head-fixed and filmed from the side.
-            All subjects are spatially aligned so that the eye occupies the same position
-            across recordings. Six subjects were recorded during DER.
-            For each subject, five shock intensities were presented, with six trials per intensity,
-            for a total of 30 trials. In the videos, the triggers are encoded in the pixels of
-            the upper left corner of each frame. When the pixel value exceeds 200, the trigger is on.
-            During preprocessing, we cropped the first 10 pixels in both height and width to
-            remove the trigger.</p>
-        <img src="GIFs/trial_4_full.gif" id="example-trial" alt="Example trigger trial">
-    </div>
+        <div class="trigger-col">
+            <h2>Description</h2>
+            <p>
+                The videos are recordings of experimental sessions lasting more than 30 minutes,
+                during which the mouse is head fixed and filmed from the side.
+                All subjects are spatially aligned so that the eye occupies the same position
+                across recordings. Six subjects were recorded during Direct Emotional Response (DER).
+                For each subject, five shock intensities were presented, with six trials per intensity,
+                for a total of 30 trials per subject.
+            </p>
+            <p>
+                In the raw videos, the triggers are encoded in the pixels of the upper left corner
+                of each frame. When the pixel value exceeds 200, the trigger is considered on.
+                During preprocessing, the first 10 pixels in both height and width were cropped
+                to remove the trigger region from the visual stimulus.
+            </p>
 
-    <div class="trigger-col">
-        <h2>Trigger Encoding</h2>
-        <p>This is the normalized plot of the upper left corner of each frame. The <span style="color:#F58A25; font-weight:bold;">X</span> represent the Trigger.</p>
-        <img src="graphs/trigger.svg" id="trigger-img" alt="Trigger plot">
-    </div>
-</section>
+            <!-- Example trial preview as MP4 -->
+            <!-- Adjust filename if needed -->
+            <video id="example-trial"
+                   autoplay
+                   loop
+                   muted
+                   playsinline
+                   preload="metadata"
+                   style="max-width:300px; border:1px solid #ccc; display:block; margin:10px auto 20px auto;">
+                <source src="mp4/trial_4_full.mp4" type="video/mp4">
+                Your browser does not support MP4 playback.
+            </video>
+        </div>
 
-    <section id="api-docs" style="text-align:center; padding-top:30px;">
+        <div class="trigger-col">
+            <h2>Trigger Encoding</h2>
+            <p>
+                This is the normalized plot of the upper left corner of each frame.
+                The <span style="color:#F58A25; font-weight:bold;">X</span> markers indicate the detected triggers.
+            </p>
+            <img src="graphs/trigger.svg" id="trigger-img" alt="Trigger plot">
+        </div>
+    </section>
 
-    <h2>API Documentation</h2>
-    <p style="max-width:700px; margin:0 auto 20px auto; font-size:0.95rem; color:#444;">
-        The Python library included with the DER Videos dataset provides a high-level API
-        to load videos, extract trials, compute movement indices, and generate visualizations.
-        You can browse the full documentation below.
-    </p>
+    <!-- API documentation button -->
+    <section id="api-docs">
+        <h2>API Documentation</h2>
+        <p class="api-text">
+            The Python library included with the DER Videos dataset provides a high level API
+            to load videos, extract trials, compute movement indices, and generate visualizations.
+            You can browse the full documentation below.
+        </p>
 
-    <a href="docs/index.html" target="_blank"
-       style="
-          display:inline-block;
-          background:#5a5a5a;
-          color:white;
-          padding:16px 32px;
-          border-radius:8px;
-          font-weight:600;
-          font-size:18px;
-          text-decoration:none;
-          font-family:Arial, sans-serif;
-          min-width:240px;
-          text-align:center;
-          box-shadow:0 2px 4px rgba(0,0,0,0.15);
-          transition:background 0.2s ease, transform 0.15s ease;
-       "
-       onmouseover="this.style.background='#6e6e6e'; this.style.transform='scale(1.03)';"
-       onmouseout="this.style.background='#5a5a5a'; this.style.transform='scale(1)';"
-    >
-        📘 Open API Documentation
-    </a>
+        <a href="docs/index.html" target="_blank" class="api-button">
+            📘 Open API Documentation
+        </a>
+    </section>
 
-</section>
-
+    <!-- Dataset Browser -->
     <section id="dataset-section">
         <h2>Dataset Browser</h2>
         <div id="dataset-container">Loading dataset...</div>
     </section>
 
     <footer>
-    <p id="contact"></p>
+        <p id="contact"></p>
     </footer>
 
     <script src="script.js"></script>

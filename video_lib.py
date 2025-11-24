@@ -1109,42 +1109,29 @@ class VideoManager:
 
     def previewAllTrials2Video(self, pre=100, post=100, frame_height=700, video_filename=None):
         """
-        Generate and save a mosaic video of all trials.
-
-        Similar to `previewAllTrials`, but instead of showing the mosaic live,
-        this method writes it to a video file on disk.
-
-        Parameters
-        ----------
-        pre : int, optional
-            Frames before each trigger to include in the trial segments.
-        post : int, optional
-            Frames after each trigger to include.
-        frame_height : int, optional
-            Height of the mosaic frames in the saved video.
-        video_filename : str, optional
-            Output video filename. If None, uses "<rec>.mp4".
-
-        Returns
-        -------
-        None
-            Writes a video file with the mosaic of all trials.
+        Generate a browser-compatible MP4 video using:
+        - OpenCV to assemble frames (AVI temporary)
+        - FFmpeg to encode into proper H.264 MP4
         """
 
+        import subprocess
+        import os
+        import tempfile
+
         if video_filename is None:
-            video_filename = self.rec + '.mp4'
+            video_filename = self.rec + ".mp4"
 
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = 0.5
-        thickness = 1
-        color = (255, 255, 255)
-        color_stim = (255, 0, 0)
-        print('### VideoManager ### creating the video...')
-        # Set up video writer
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        print("### VideoManager ### assembling frames...")
+
+        # Temporary AVI (OpenCV writes AVI reliably)
+        tmp_avi = tempfile.NamedTemporaryFile(suffix=".avi", delete=False).name
+
+        # OpenCV AVI writer
         frame_width = frame_height * (self.resolution[1] // self.resolution[0])
-        out = cv2.VideoWriter(video_filename, fourcc, self.fps, (frame_width, frame_height))
+        fourcc = cv2.VideoWriter_fourcc(*"XVID")
+        out = cv2.VideoWriter(tmp_avi, fourcc, self.fps, (frame_width, frame_height))
 
+        # Mosaic building (unchanged from your code)
         big_frame_res = (frame_height, frame_width)
         rows, cols = len(self.stimuli[0]), np.max(self.stimuli[1])
         resize_to = big_frame_res[0] // rows, frame_width // cols
@@ -1154,7 +1141,12 @@ class VideoManager:
         row_poses = np.arange(0, big_frame_res[0], resize_to[0])
         col_poses = np.arange(0, big_frame_res[1], resize_to[1])
         col_pos = 0
-        row_pos = 0
+
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 0.5
+        thickness = 1
+        color = (255, 255, 255)
+        color_stim = (255, 0, 0)
 
         for i, row in enumerate(self.stim_intensity):
             if i > 0 and row == 0:
@@ -1163,9 +1155,8 @@ class VideoManager:
             row_pos = row_poses[row]
 
             trl, trg = self.get_trial(i, pre, post)
-
             trl_resized = np.zeros((trl.shape[0], resize_to[0], resize_to[1], 3), dtype=np.uint8)
-            text = f'T:{i} I:{row}'
+            text = f"T:{i} I:{row}"
             text_size = cv2.getTextSize(text, font, font_scale, thickness)[0]
             text_x = resize_to[1] - text_size[0]
             text_y = text_size[1]
@@ -1176,17 +1167,40 @@ class VideoManager:
                 if trg[j]:
                     txt_color = color_stim
                 resiz = cv2.putText(resiz, text, (text_x, text_y), font, font_scale, txt_color, thickness)
-                trl_resized[j, :, :, :] = resiz
+                trl_resized[j] = resiz
 
             for f in range(trl.shape[0]):
-                big_frame[f, row_pos:row_pos + resize_to[0], col_pos:col_pos + resize_to[1], :] = trl_resized[f, :, :,
-                                                                                                  :]
+                big_frame[f,
+                row_pos:row_pos + resize_to[0],
+                col_pos:col_pos + resize_to[1]] = trl_resized[f]
 
+        # Write AVI
         for i in range(big_frame.shape[0]):
             out.write(big_frame[i])
 
         out.release()
-        print('### VideoManager ### creating the video...done')
+
+        print("### VideoManager ### encoding final MP4 with ffmpeg...")
+
+        # Convert AVI -> H.264 MP4
+        cmd = [
+            "ffmpeg",
+            "-y",
+            "-i", tmp_avi,
+            "-movflags", "faststart",
+            "-pix_fmt", "yuv420p",
+            "-vcodec", "libx264",
+            "-preset", "medium",
+            "-crf", "22",
+            video_filename,
+        ]
+
+        subprocess.run(cmd, check=True)
+
+        # Cleanup
+        os.remove(tmp_avi)
+
+        print(f"### VideoManager ### done. Saved: {video_filename}")
 
     def previewAllTrials2GIF(self, pre=100, post=100, frame_height=700,
                              gif_filename=None,
